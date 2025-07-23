@@ -1,0 +1,7 @@
+mode: ssh
+ssh:
+  host: 127.0.0.1
+  port: 22
+  user: user
+  password: password
+  
