@@ -1,0 +1,4 @@
+mode: web
+url: challenge02.root-me.org
+port: 56003
+verbose: false

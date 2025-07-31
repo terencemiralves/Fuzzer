@@ -30,6 +30,16 @@ class Dispatcher:
         else:
             raise ValueError("Unsupported mode: {}".format(self.config["mode"]))
         
+    def is_connected(self):
+        """
+        Check if the client is connected.
+        :return: True if connected, False otherwise
+        """
+        if self.client:
+            return self.client.is_connected()
+        else:
+            raise ValueError("Client not initialized")
+
     def connect(self):
         if self.client:
             self.client.connect()
@@ -48,9 +58,15 @@ class Dispatcher:
         else:
             raise ValueError("Client not initialized")
         
-    def receive_response(self):
+    def receive_response(self, arg=4096):
+        """
+        Receive a response from the target service.
+        :param arg: Number of bytes to receive, default is 4096 or 'line' to receive until a newline or a specific string to receive until
+        :type arg: int or str
+        :return: The response received from the target service
+        """
         if self.client:
-            return self.client.receive_response()
+            return self.client.receive_response(arg)
         else:
             raise ValueError("Client not initialized")
         
@@ -59,3 +75,31 @@ class Dispatcher:
             self.client.close()
         else:
             raise ValueError("Client not initialized")
+        
+    def parse_instructions(self, instructions):
+        """
+        Send the initial instructions to the target service.
+        :param instructions: List of instructions to execute, this list should contain tuples of (command, argument)
+                             Commands can be "recv" or "send". Careful with the command "recv" for recv an int you should give an integer and not a string.
+        :return: None
+        """
+        if instructions and self.is_connected():
+            for command, arg in instructions:
+                if self.client.verbose:
+                    print(f"Executing command: {command} with arg: {arg}")
+                if command == "recv":
+                    response = self.receive_response(arg)
+                    if self.client.verbose:
+                        print(f"Received: {response}")
+                elif command == "send":
+                    if isinstance(arg, str):
+                        arg = arg.encode()
+                    elif not isinstance(arg, bytes):
+                        raise ValueError("Argument must be a string or bytes")
+                    if self.client.verbose:
+                        print(f"Sending: {arg}")
+                    self.send_command(arg)
+                else:
+                    raise ValueError(f"Unknown command: {command}")
+        else:
+            raise ValueError("Instructions not set up or client not connected. Call setup_init_instructions() or connect() first.")
