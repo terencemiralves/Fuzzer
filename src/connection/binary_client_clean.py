@@ -11,7 +11,7 @@ PARSE_ERROR_FOR_FILE = [b"Usage", b"help"]
 TMP_EXPLOIT_FILE = "/tmp/exploit_file"
 
 class BinaryClient:
-    def __init__(self, binary_path, type_binary, type_input, verbose=False):
+    def __init__(self, binary_path, type_binary=None, type_input=None, verbose=False):
         """
         Initialize the BinaryClient with the binary path and type.
         :param binary_path: Path to the binary file
@@ -40,6 +40,9 @@ class BinaryClient:
         # Type of input: "stdin" for stdin, "f" for file as arg, "arg" for argument, "a" for automatic
         self.type_input = type_input
 
+        if self.type_binary is None or self.type_input is None:
+            self.setup_type(type_binary, type_input)
+
         # Check if the binary path is set
         if not self.binary_path:
             raise ValueError("Binary path is not set.")
@@ -53,6 +56,31 @@ class BinaryClient:
         if self.type_binary not in ["i", "ni"]:
             raise ValueError("Invalid type_binary. Must be 'i' or 'ni'.")
 
+    def setup_type(self, type_binary=None, type_input=None):
+        """
+        Setup the type of binary and input based on the binary path.
+        This method is called after the binary client is initialized.
+        """
+        if type_binary:
+            self.type_binary = type_binary
+        else:
+            print("There are 2 types of binary: 'i' for interactive (while True loop) and 'ni' for non-interactive (send a command and the process exits).")
+            input_str = input("Enter the type of binary (i/ni): ").strip().lower()
+            if input_str in ["i", "ni"]:
+                self.type_binary = input_str
+            else:
+                raise ValueError("Invalid type_binary. Must be 'i' or 'ni'.")
+        if type_input:
+            self.type_input = type_input
+        else:
+            print("There are 3 types of input: 'stdin' for standard input (stdin), 'f' for file as arg (file is passed as an argument to the binary) and 'arg' for argument (binary is run with exploitable arguments).")
+            input_str = input("Enter the type of input (stdin/f/arg): ").strip().lower()
+            if input_str in ["stdin", "f", "arg"]:
+                self.type_input = input_str
+            else:
+                raise ValueError("Invalid type_input. Must be 'stdin', 'f', or 'arg'.")
+        
+        
     ### CHECKS ###
 
     def process_alive(self):
@@ -69,6 +97,15 @@ class BinaryClient:
         :return: True if connected, False otherwise
         """
         return self.p is not None and self.p.connected()
+    
+
+    def is_interactive(self):
+        """
+        Check if the client is interactive.
+        :return: True if interactive, False otherwise
+        """
+        return self.type_binary == "i"
+    
     
     ### CONNECTIONS ###
 
@@ -188,8 +225,22 @@ class BinaryClient:
             response = self.p.recvuntil(arg.encode())
         else:
             raise ValueError("Argument must be an integer or a string ('line' or any other string to recvuntil).")
+        if self.type_binary == "ni":
+            self.p.close()
         return response
     
+    def interactive(self):
+        """
+        Start an interactive session with the binary process.
+        :return: None
+        """
+        if self.p is None:
+            print("Connection not established. Call connect() first.")
+            return
+        if self.verbose:
+            print("Starting interactive session with the binary process.")
+        self.p.interactive()
+
     def close(self):
         if self.verbose:
             print("Closing binary client connection.")

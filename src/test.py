@@ -1,20 +1,27 @@
-from tools.string_bug import FormatStringExploit
-from dispatcher import Dispatcher
-import yaml
+import re
 
-def load_config(path):
-    with open(path, "r") as f:
-        return yaml.safe_load(f)
-init_instructions = [
-    ["recv", 1024],
-    ["send", "toto"],
-    ["recv", 1024],
-    ["send", "tata"],
-    ["recv", 1024],
-    ]
-dispatcher = Dispatcher(load_config("config/test_config.yml"))
-exploit = FormatStringExploit(dispatcher, verbose=True)
-exploit.setup_init_instructions(init_instructions)
-exploit.find_offset(max_offset=100, delay_between_request=0.1, connect_and_close=False, retry_on_error=False)
-print(exploit.offset)
-print(exploit.stack_alignment)
+def extract_tokens_bytes(template: bytes, actual: bytes):
+    """
+    Extrait les groupes nommés (ex: {address}) d'une chaîne binaire basée sur un template binaire.
+    Le template peut contenir des tokens comme b'{address}'.
+    """
+    # Regex : échappe les caractères spéciaux sauf les tokens
+    # On cherche : b'\{address\}' → on remplace par regex binaire
+    pattern = re.escape(template)
+
+    # Remplace tous les \{token\} par des groupes nommés
+    pattern = re.sub(rb'\\\{(\w+)\\\}', lambda m: b'(?P<' + m.group(1) + b'>.+?)', pattern)
+
+    # Compile et match
+    regex = re.compile(pattern)
+    match = regex.match(actual)
+    if match:
+        return match.groupdict()
+    else:
+        return None
+
+template = b"check at {address}\nargv[1] = [%1$p]\nfmt=[0x80485f1]\ncheck=0x4030201\n"
+actual   = b"check at 0xffa6f1a8\nargv[1] = [%1$p]\nfmt=[0x80485f1]\ncheck=0x4030201\n"
+
+result = extract_tokens_bytes(template, actual)
+print(result)

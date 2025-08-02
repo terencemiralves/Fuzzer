@@ -1,7 +1,7 @@
 
 from connection.ssh_client import SSHClient
 from connection.web_client import WebClient
-from connection.binary_client import BinaryClient
+from connection.binary_client_clean import BinaryClient
 
 class Dispatcher:
     def __init__(self, config):
@@ -24,6 +24,8 @@ class Dispatcher:
         elif self.config["mode"] == "binary":
             self.client = BinaryClient(
                 self.config["binary"],
+                self.config.get("type_binary", None),
+                self.config.get("type_input", None),
                 verbose=self.config.get("verbose", False)
             )
             
@@ -37,6 +39,16 @@ class Dispatcher:
         """
         if self.client:
             return self.client.is_connected()
+        else:
+            raise ValueError("Client not initialized")
+        
+    def is_interactive(self):
+        """
+        Check if the client is interactive.
+        :return: True if interactive, False otherwise
+        """
+        if self.client:
+            return self.client.is_interactive()
         else:
             raise ValueError("Client not initialized")
 
@@ -103,3 +115,13 @@ class Dispatcher:
                     raise ValueError(f"Unknown command: {command}")
         else:
             raise ValueError("Instructions not set up or client not connected. Call setup_init_instructions() or connect() first.")
+        
+    def interactive(self):
+        """
+        Start an interactive session with the target service.
+        :return: None
+        """
+        if self.client:
+            self.client.interactive()
+        else:
+            raise ValueError("Client not initialized")

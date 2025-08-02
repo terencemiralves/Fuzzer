@@ -31,7 +31,14 @@ class WebClient:
         :return: True if connected, False otherwise
         """
         return self.p is not None and self.p.connected()
-
+    
+    def is_interactive(self):
+        """
+        Check if the client is interactive.
+        :return: True if interactive, False otherwise
+        """
+        return True
+    
     def send_request(self, request):
         if self.p is None:
             print("Connection not established. Call connect() first.")
