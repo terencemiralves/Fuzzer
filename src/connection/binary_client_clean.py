@@ -118,7 +118,8 @@ class BinaryClient:
         if self.type_input != "f" and self.type_input != "arg":
             self.p = process(self.binary_path)
         else:
-            print("[!] Binary is the type 'f' or 'arg' so no need to connect.")
+            if self.verbose:
+                print("[!] Binary is the type 'f' or 'arg' so no need to connect.")
         if self.verbose:
             print(f"Connected to binary: {self.binary_path}")
 
@@ -139,10 +140,10 @@ class BinaryClient:
                     raise RuntimeError("Core pattern is not set to 'core'.")
         else:
             raise FileNotFoundError("Core pattern file not found.")
+        pwd = os.getcwd()
         with enable_core_dumps("/tmp"):
-            pwd = os.getcwd()
             if self.type_input == "stdin":
-                p = Popen([pwd + self.binary_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                p = Popen([pwd + "/" + self.binary_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 p.stdin.write(command + b"\n")
                 p.stdin.flush()
             elif self.type_input == "f":
@@ -151,10 +152,10 @@ class BinaryClient:
                 f.close()
                 if self.verbose:
                     print("Process is a file, sending command as argument.")
-                p = Popen([self.binary_path, TMP_EXPLOIT_FILE], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                p = Popen([pwd + "/" + self.binary_path, TMP_EXPLOIT_FILE], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 os.remove(TMP_EXPLOIT_FILE)
             elif self.type_input == "arg":
-                p = Popen([self.binary_path, command], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                p = Popen([pwd + "/" + self.binary_path, command], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             p.wait()
 

@@ -7,6 +7,7 @@ class Dispatcher:
     def __init__(self, config):
         self.config = config
         self.client = None
+        # NOT REALLY IMPLEMENTED
         if self.config["mode"] == "ssh":
             self.client = SSHClient(
                 self.config["ssh"]["host"],
@@ -15,12 +16,14 @@ class Dispatcher:
                 self.config["ssh"].get("password", None),
                 verbose=self.config.get("verbose", False)
             )
+        # NOT REALLY IMPLEMENTED
         elif self.config["mode"] == "web":
             self.client = WebClient(
                 self.config["url"],
                 self.config["port"],
                 verbose=self.config.get("verbose", False)
             )
+        # TRY IMPLEMENTED
         elif self.config["mode"] == "binary":
             self.client = BinaryClient(
                 self.config["binary"],
@@ -28,9 +31,12 @@ class Dispatcher:
                 self.config.get("type_input", None),
                 verbose=self.config.get("verbose", False)
             )
-            
         else:
             raise ValueError("Unsupported mode: {}".format(self.config["mode"]))
+        # Template for injecting payloads.
+        # Exemple :
+        #  send_payload_template: "username=__PAYLOAD__"
+        self.send_payload_template = self.config.get("send_payload_template", None)
         
     def is_connected(self):
         """
@@ -60,12 +66,26 @@ class Dispatcher:
         
     def get_segfault(self, command):
         if self.client and hasattr(self.client, 'get_address_segfault'):
+            if self.send_payload_template:
+                if isinstance(command, bytes):
+                    command_str = command.decode()
+                else:
+                    command_str = command
+                command_str = self.send_payload_template.replace("__PAYLOAD__", command_str)
+                command = command_str.encode()
             return self.client.get_address_segfault(command)
         else:
             raise ValueError("Client does not support segfault retrieval or is not initialized")
         
     def send_command(self, command):
         if self.client:
+            if self.send_payload_template:
+                if isinstance(command, bytes):
+                    command_str = command.decode()
+                else:
+                    command_str = command
+                command_str = self.send_payload_template.replace("__PAYLOAD__", command_str)
+                command = command_str.encode()
             return self.client.send_request(command)
         else:
             raise ValueError("Client not initialized")
