@@ -152,12 +152,17 @@ class BinaryClient:
                 f.close()
                 if self.verbose:
                     print("Process is a file, sending command as argument.")
-                p = Popen([pwd + "/" + self.binary_path, TMP_EXPLOIT_FILE], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                os.remove(TMP_EXPLOIT_FILE)
+                p = Popen([pwd + "/" + self.binary_path, TMP_EXPLOIT_FILE], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd="/tmp")
             elif self.type_input == "arg":
                 p = Popen([pwd + "/" + self.binary_path, command], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-            p.wait()
+            ret = p.wait()
+            if self.type_input == "f":
+                os.remove(TMP_EXPLOIT_FILE)
+            if ret == 0:
+                if self.verbose:
+                    print(f"[-] No segmentation fault detected for size {len(command)}.")
+                return None
 
             core_files = glob.glob("/tmp/core*")
             if not core_files:
@@ -176,7 +181,7 @@ class BinaryClient:
     ### REQUESTS AND RESPONSES ###
 
     def send_request(self, command):
-        """ Send a command to the binary process and return the """
+        """ Send a command to the binary process and return the return code. Return None if the process is still alive."""
         # Binary with stdin input
         if self.type_input == "stdin":
             # Interactive binary
@@ -204,12 +209,31 @@ class BinaryClient:
             if self.verbose:
                 print("Process is a file, sending command as argument.")
             self.p = process([self.binary_path, TMP_EXPLOIT_FILE])
-            os.remove(TMP_EXPLOIT_FILE)
         # Binary with argument input
         elif self.type_input == "arg":
             if self.verbose:
                 print("Process is an argument, sending command as argument.")
             self.p = process([self.binary_path, command])
+        
+        # Check if the process is alive
+        if not self.process_alive():
+            if self.verbose:
+                print("Process is not alive, returning return code.")
+            if self.type_input == "f":
+                os.remove(TMP_EXPLOIT_FILE)
+            return self.p.returncode
+        else:
+            if self.verbose:
+                print("Process is still alive")
+            if self.type_binary == "ni":
+                self.p.wait()
+                if self.type_input == "f":
+                    os.remove(TMP_EXPLOIT_FILE)
+                return self.p.returncode
+            else:
+                return None
+
+        
 
     def receive_response(self, arg=4096):
         """

@@ -3,6 +3,7 @@ Fuzzer for find overflow / string bug / ...
 
 
 ```bash
+ulimit -c unlimited
 cat /proc/sys/kernel/core_pattern
 core
 ```
