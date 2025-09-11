@@ -1,4 +1,4 @@
 mode: binary
 binary: target/chal
 expected_responses: []
-send_payload_template: "USERNAME=__PAYLOAD__"
+#send_payload_template: "USERNAME=__PAYLOAD__"

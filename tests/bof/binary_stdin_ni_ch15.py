@@ -9,20 +9,18 @@ from exploit import OverflowExploit
 
 """
 mode: binary
-binary: target/ch10
+binary: target/bof/ch15
 expected_responses: []
-send_payload_template: "USERNAME=__PAYLOAD__"
 """
 
-class TestBinaryOverflowNiF(unittest.TestCase):
+class TestBinaryOverflowNiStdin(unittest.TestCase):
     def setUp(self):
         self.exploit = OverflowExploit({
             'mode': 'binary',
-            'binary': 'target/ch10',
+            'binary': 'target/bof/ch15',
             'type_binary': 'ni',
-            'type_input': 'f',
-            'verbose': False,
-            'send_payload_template': "USERNAME=__PAYLOAD__"
+            'type_input': 'stdin',
+            'verbose': False
             })
 
     def FindOffsetTest(self):
@@ -36,7 +34,7 @@ class TestBinaryOverflowNiF(unittest.TestCase):
         # Run the exploit to find the offset
         offset = self.exploit.run()
 
-        self.assertEqual(offset, 136, "Offset should be 136")
+        self.assertEqual(offset, 128, "Offset should be 128")
 
         # Reset stdout
         sys.stdout = sys.__stdout__
