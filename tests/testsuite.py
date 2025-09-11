@@ -5,6 +5,7 @@ import glob
 from string_bug.binary_none_stack_alignment import TestBinaryNoneStackAlignment
 from bof.binary_f_ni_ch10 import TestBinaryOverflowNiF
 from bof.binary_stdin_ni_ch15 import TestBinaryOverflowNiStdin
+from bof.binary_arg_ni_ch33 import TestBinaryOverflowNiArg
 
 def suite():
     suite = unittest.TestSuite()
@@ -23,6 +24,7 @@ def suite():
     suite.addTest(TestBinaryNoneStackAlignment("ResolutionPrintStackAddresses"))
     suite.addTest(TestBinaryOverflowNiF("FindOffsetTest"))
     suite.addTest(TestBinaryOverflowNiStdin("FindOffsetTest"))
+    suite.addTest(TestBinaryOverflowNiArg("FindOffsetTest"))
     return suite
 
 if __name__ == "__main__":
