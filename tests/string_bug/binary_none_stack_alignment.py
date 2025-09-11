@@ -164,6 +164,7 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         """
         Test to resolve the addresses in the stack.
         """
+        print("Resolution test to implement")
         self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
         
         self.exploit.find_offset(max_offset=100, delay_between_request=0, connect_and_close=False, retry_on_error=True)
@@ -172,11 +173,13 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
             address_overwrite=0xbffffa88,
             address_wanted=0xdeadbeef,
         )
+        
 
     def ResolutionPrintStackAddresses(self):
         """
         Test to resolve the addresses in the stack and print them.
         """
+        print("ResolutionPrintStackAddresses test to implement")
         self.dispatcher = Dispatcher({
             'mode': 'binary',
             'binary': 'target/string_bug/ch14',

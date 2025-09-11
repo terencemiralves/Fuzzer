@@ -1,6 +1,6 @@
 import argparse
 import yaml
-from exploit import Exploit
+from exploit import OverflowExploit
 def load_config(path):
     with open(path, "r") as f:
         return yaml.safe_load(f)
@@ -59,7 +59,7 @@ def main():
     elif config["mode"] == "ssh":
         print(f"  → SSH : {config['ssh']['user']}@{config['ssh']['host']} (password: {config['ssh']['password']})")
     
-    exploit = Exploit(config)
+    exploit = OverflowExploit(config)
     response = exploit.run()
     # if response:
     #     print(f"[+] Final response: {response}")

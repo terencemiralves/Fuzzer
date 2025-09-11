@@ -599,7 +599,6 @@ class FormatStringExploit:
         :param address_wanted: The address to write to
         :return: The payload to send to the target service
         """
-        print('self.offset:', self.offset)
         if self.offset is None:
             raise ValueError("Offset not set. Call find_offset() first.")
         

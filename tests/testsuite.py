@@ -3,6 +3,7 @@ import os
 import glob
 # from string_bug.web_none_stack_alignment import TestWebNoneStackAlignment
 from string_bug.binary_none_stack_alignment import TestBinaryNoneStackAlignment
+from overflow.binary_f_ni_ch10 import TestBinaryOverflowNiF
 
 def suite():
     suite = unittest.TestSuite()
@@ -18,6 +19,8 @@ def suite():
     suite.addTest(TestBinaryNoneStackAlignment("FindStringInStack"))
     suite.addTest(TestBinaryNoneStackAlignment("FindNotPresentStringInStack"))
     suite.addTest(TestBinaryNoneStackAlignment("Resolution"))
+    suite.addTest(TestBinaryNoneStackAlignment("ResolutionPrintStackAddresses"))
+    suite.addTest(TestBinaryOverflowNiF("FindOffsetTest"))
     return suite
 
 if __name__ == "__main__":
