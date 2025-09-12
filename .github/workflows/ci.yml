@@ -25,7 +25,11 @@ jobs:
           pip install -r requirements.txt
 
       - name: Make target executable
-        run: find target/string_bug -type f -exec chmod +x {} \; find target/bof -type f -exec chmod +x {} \;
+        run: |
+          find target/string_bug -type f -exec chmod +x {} \;
+          find target/bof -type f -exec chmod +x {} \;
 
       - name: Run testsuite
+        env:
+          TERM: xterm
         run: python3 tests/testsuite.py
