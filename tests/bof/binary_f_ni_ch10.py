@@ -5,7 +5,7 @@ from io import StringIO
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
 from dispatcher import Dispatcher
-from bof_exploit import OverflowExploit
+from exploit.bof_exploit import OverflowExploit
 
 """
 mode: binary

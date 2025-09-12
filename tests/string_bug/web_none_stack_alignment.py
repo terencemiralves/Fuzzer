@@ -4,7 +4,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
 from dispatcher import Dispatcher
-from tools.string_bug import FormatStringExploit
+from exploit.string_bug import FormatStringExploit
 
 """
 mode: web

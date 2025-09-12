@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import unittest
 import os
 import glob
@@ -28,7 +30,7 @@ def suite():
 
 if __name__ == "__main__":
     runner = unittest.TextTestRunner()
-    runner.run(suite())
+    result = runner.run(suite())
     # Remove all core dumps generated during the tests
     for core_file in glob.glob("/tmp/core*"):
         try:
@@ -40,3 +42,5 @@ if __name__ == "__main__":
             os.remove(core_file)
         except OSError as e:
             print(f"Error removing core file {core_file}: {e}")
+    if not result.wasSuccessful():
+        exit(1)
