@@ -28,6 +28,7 @@ jobs:
         run: |
           find target/string_bug -type f -exec chmod +x {} \;
           find target/bof -type f -exec chmod +x {} \;
+          sudo bash -c "echo 'core' > /proc/sys/kernel/core_pattern";
 
       - name: Run testsuite
         env:
