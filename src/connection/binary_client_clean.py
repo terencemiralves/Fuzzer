@@ -15,6 +15,8 @@ class BinaryClient:
                  binary_path: str,
                  type_binary: str | None = None,
                  type_input: str | None = None,
+                 aslr: bool = True,
+                 sendline: bool = False,
                  verbose: bool = False):
         """
         Initialize the BinaryClient with the binary path and type.
@@ -31,6 +33,8 @@ class BinaryClient:
         # Declarations
         self.binary_path = binary_path
         self.verbose = verbose
+        self.aslr = aslr
+        self.sendline = sendline
         self.elf = None
         self.p = None
 
@@ -124,7 +128,7 @@ class BinaryClient:
         
         self.elf = ELF(self.binary_path)
         if self.type_input != "f" and self.type_input != "arg":
-            self.p = process(self.binary_path)
+            self.p = process(self.binary_path, aslr=self.aslr)
         else:
             if self.verbose:
                 print("[!] Binary is the type 'f' or 'arg' so no need to connect.")
@@ -173,7 +177,7 @@ class BinaryClient:
                 f.close()
                 if self.verbose:
                     print("Process is a file, sending command as argument.")
-                p = Popen([pwd + "/" + self.binary_path, TMP_EXPLOIT_FILE], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd="/tmp")
+                p = Popen([pwd + "/" + self.binary_path, TMP_EXPLOIT_FILE], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             elif self.type_input == "arg":
                 if self.verbose:
                     print("Process is an argument, sending command as argument.")
@@ -208,7 +212,7 @@ class BinaryClient:
 
     ### REQUESTS AND RESPONSES ###
 
-    def send_request(self, command: str) -> int | None:
+    def send_request(self, command: str, get_return: bool = True) -> int | None:
         """
         Send a command to the binary process
         :param command: Command to send to the binary process
@@ -216,7 +220,6 @@ class BinaryClient:
         """
 
         ## SEND COMMAND ##
-
         # Binary with stdin input
         if self.type_input == "stdin":
             # Interactive binary
@@ -224,7 +227,10 @@ class BinaryClient:
                 if self.verbose:
                     print("Process is interactive, sending command as input.")
                 if self.process_alive():
-                    self.p.sendline(command)
+                    if self.sendline:
+                        self.p.sendline(command)
+                    else:
+                        self.p.send(command)
                 else:
                     raise RuntimeError("Process is not alive, cannot send command.")
             # Non-interactive binary
@@ -232,7 +238,10 @@ class BinaryClient:
                 if self.verbose:
                     print("Process is non-interactive, sending command as input.")
                 if self.process_alive():
-                    self.p.sendline(command)
+                    if self.sendline:
+                        self.p.sendline(command)
+                    else:
+                        self.p.send(command)
                 else:
                     raise RuntimeError("Process is not alive, cannot send command.")
         # Binary with file as input
@@ -242,38 +251,38 @@ class BinaryClient:
             f.close()
             if self.verbose:
                 print("Process is a file, sending command as argument.")
-            self.p = process([self.binary_path, TMP_EXPLOIT_FILE])
+            self.p = process([self.binary_path, TMP_EXPLOIT_FILE], aslr=self.aslr)
         # Binary with argument input
         elif self.type_input == "arg":
             if self.verbose:
                 print("Process is an argument, sending command as argument.")
-            self.p = process([self.binary_path, command])
-        
+            self.p = process([self.binary_path, command], aslr=self.aslr)
+
         ## RETURN CODE ##
-
-        # Check if the process is alive
-        if not self.process_alive():
-            if self.verbose:
-                print("Process is not alive, returning return code.")
-            
-            if self.type_input == "f":
-                os.remove(TMP_EXPLOIT_FILE)
-            return self.p.returncode
-        else:
-            if self.verbose:
-                print("Process is still alive")
-
-            if self.type_binary == "ni":
-                self.p.wait()
+        if get_return:
+            # Check if the process is alive
+            if not self.process_alive():
+                if self.verbose:
+                    print("Process is not alive, returning return code.")
+                
                 if self.type_input == "f":
                     os.remove(TMP_EXPLOIT_FILE)
                 return self.p.returncode
             else:
-                return None
+                if self.verbose:
+                    print("Process is still alive")
+
+                if self.type_binary == "ni":
+                    self.p.wait()
+                    if self.type_input == "f":
+                        os.remove(TMP_EXPLOIT_FILE)
+                    return self.p.returncode
+                else:
+                    return None
 
         
 
-    def receive_response(self, arg : int | str = 4096) -> bytes | None:
+    def receive_response(self, arg : int | str = 4096, close_process : bool = True) -> bytes | None:
         """
         Receive a response from the binary process
         :param arg: Number of bytes to receive, default is 4096 or 'line' to receive until a newline or a specific string to receive until
@@ -288,7 +297,7 @@ class BinaryClient:
             response = self.p.recvuntil(arg.encode())
         else:
             raise ValueError("Argument must be an integer or a string ('line' or any other string to recvuntil).")
-        if self.type_binary == "ni":
+        if self.type_binary == "ni" and close_process:
             self.p.close()
         return response
     

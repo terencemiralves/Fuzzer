@@ -15,3 +15,6 @@ Run the tests with:
 ```bash
 python3 tests/testsuite.py
 ```
+
+
+-> Faire en sorte d'essayer sans \n et avec \n si timeout

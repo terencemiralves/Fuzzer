@@ -2,6 +2,7 @@
 from connection.ssh_client import SSHClient
 from connection.web_client import WebClient
 from connection.binary_client_clean import BinaryClient
+import os
 
 class Dispatcher:
     def __init__(self, config):
@@ -29,7 +30,9 @@ class Dispatcher:
                 self.config["binary"],
                 self.config.get("type_binary", None),
                 self.config.get("type_input", None),
-                verbose=self.config.get("verbose", False)
+                self.config.get("ASLR", True),
+                verbose=self.config.get("verbose", False),
+                sendline=self.config.get("sendline", False)
             )
         else:
             raise ValueError("Unsupported mode: {}".format(self.config["mode"]))
@@ -77,7 +80,7 @@ class Dispatcher:
         else:
             raise ValueError("Client does not support segfault retrieval or is not initialized")
         
-    def send_command(self, command):
+    def send_command(self, command, get_return=True):
         if self.client:
             if self.send_payload_template:
                 if isinstance(command, bytes):
@@ -86,11 +89,11 @@ class Dispatcher:
                     command_str = command
                 command_str = self.send_payload_template.replace("__PAYLOAD__", command_str)
                 command = command_str.encode()
-            return self.client.send_request(command)
+            return self.client.send_request(command, get_return=get_return)
         else:
             raise ValueError("Client not initialized")
         
-    def receive_response(self, arg=4096):
+    def receive_response(self, arg=4096, close_process : bool = True):
         """
         Receive a response from the target service.
         :param arg: Number of bytes to receive, default is 4096 or 'line' to receive until a newline or a specific string to receive until
@@ -98,7 +101,7 @@ class Dispatcher:
         :return: The response received from the target service
         """
         if self.client:
-            return self.client.receive_response(arg)
+            return self.client.receive_response(arg, close_process=close_process)
         else:
             raise ValueError("Client not initialized")
         

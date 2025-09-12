@@ -20,7 +20,8 @@ class TestBinaryOverflowNiStdin(unittest.TestCase):
             'binary': 'target/bof/ch15',
             'type_binary': 'ni',
             'type_input': 'stdin',
-            'verbose': False
+            'verbose': False,
+            'sendline': True
             })
 
     def FindOffsetTest(self):
@@ -30,7 +31,7 @@ class TestBinaryOverflowNiStdin(unittest.TestCase):
         # Capture the output
         captured_output = StringIO()
         sys.stdout = captured_output
-
+        
         # Run the exploit to find the offset
         offset = self.exploit.run()
 

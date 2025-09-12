@@ -21,7 +21,6 @@ def suite():
     suite.addTest(TestBinaryNoneStackAlignment("FindStringInStack"))
     suite.addTest(TestBinaryNoneStackAlignment("FindNotPresentStringInStack"))
     suite.addTest(TestBinaryNoneStackAlignment("Resolution"))
-    suite.addTest(TestBinaryNoneStackAlignment("ResolutionPrintStackAddresses"))
     suite.addTest(TestBinaryOverflowNiF("FindOffsetTest"))
     suite.addTest(TestBinaryOverflowNiStdin("FindOffsetTest"))
     suite.addTest(TestBinaryOverflowNiArg("FindOffsetTest"))
