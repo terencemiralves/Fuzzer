@@ -1,6 +1,6 @@
 import argparse
 import yaml
-from exploit import OverflowExploit
+from bof_exploit import OverflowExploit
 def load_config(path):
     with open(path, "r") as f:
         return yaml.safe_load(f)
@@ -59,12 +59,19 @@ def main():
     elif config["mode"] == "ssh":
         print(f"  → SSH : {config['ssh']['user']}@{config['ssh']['host']} (password: {config['ssh']['password']})")
     
-    exploit = OverflowExploit(config)
-    response = exploit.run()
-    # if response:
-    #     print(f"[+] Final response: {response}")
-    # else:
-    #     print("[-] No response received or an error occurred.")
+    print(f"[+] Trying to find buffer overflow...")
+
+    bof_exploit = OverflowExploit(config)
+    bof_index = bof_exploit.run()
+    if not bof_index:
+        print("[-] No buffer overflow detected")
+    else:
+        print(f"[+] Buffer overflow detected with size: {bof_index}")
+
+    print(f"[+] Trying string bug format")
+
+
+    print("[+] Fuzzing completed.")
 
 if __name__ == "__main__":
     main()

