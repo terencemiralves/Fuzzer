@@ -1,6 +1,6 @@
 import argparse
 import yaml
-from bof_exploit import OverflowExploit
+from exploit.exploit import Exploit
 def load_config(path):
     with open(path, "r") as f:
         return yaml.safe_load(f)
@@ -61,15 +61,20 @@ def main():
     
     print(f"[+] Trying to find buffer overflow...")
 
-    bof_exploit = OverflowExploit(config)
-    bof_index = bof_exploit.run()
-    if not bof_index:
+    exploit = Exploit(config)
+    bof_index = exploit.run_bof_exploit()
+    if bof_index == -1:
         print("[-] No buffer overflow detected")
     else:
         print(f"[+] Buffer overflow detected with size: {bof_index}")
 
     print(f"[+] Trying string bug format")
 
+    str_offset, str_stack_alignment = exploit.run_string_bug_exploit()
+    if str_offset == None or str_stack_alignment == None:
+        print("[-] No string bug format detected")
+    else:
+        print(f"[+] String bug format detected with offset: {str_offset} and stack alignment: {str_stack_alignment}")
 
     print("[+] Fuzzing completed.")
 

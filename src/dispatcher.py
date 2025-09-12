@@ -1,7 +1,7 @@
-
 from connection.ssh_client import SSHClient
 from connection.web_client import WebClient
 from connection.binary_client_clean import BinaryClient
+from tools.pattern_tools import extract_tokens
 import os
 
 class Dispatcher:
@@ -40,6 +40,8 @@ class Dispatcher:
         # Exemple :
         #  send_payload_template: "username=__PAYLOAD__"
         self.send_payload_template = self.config.get("send_payload_template", None)
+
+        self.receive_payload_template = self.config.get("receive_payload_template", None).encode() if self.config.get("receive_payload_template", None) else None
         
     def is_connected(self):
         """
@@ -101,7 +103,11 @@ class Dispatcher:
         :return: The response received from the target service
         """
         if self.client:
-            return self.client.receive_response(arg, close_process=close_process)
+            response = self.client.receive_response(arg, close_process=close_process)
+            if self.receive_payload_template and response:
+                tokens = extract_tokens(self.receive_payload_template, response)
+                return tokens["address"] if tokens and "address" in tokens else None
+            return response
         else:
             raise ValueError("Client not initialized")
         

@@ -1,7 +1,6 @@
 import re
 
-def extract_tokens(template: str, actual: str):
-
+def extract_tokens(template: bytes, actual: bytes):
     def replace(match):
         token = match.group(1)
         if token in (b"*", b"ignore"):

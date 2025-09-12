@@ -17,4 +17,3 @@ def enable_core_dumps(path="/tmp"):
         # Restore the original working directory and resource limits
         os.chdir(old_cwd)
         resource.setrlimit(resource.RLIMIT_CORE, old_limits)
-
