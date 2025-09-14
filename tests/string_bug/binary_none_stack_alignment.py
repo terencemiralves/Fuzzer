@@ -17,16 +17,17 @@ type_input: arg
 
 class TestBinaryNoneStackAlignment(unittest.TestCase):
     def setUp(self):
-        self.dispatcher = Dispatcher({
+        self.config = {
             'mode': 'binary',
             'binary': 'target/string_bug/ch14',
             'type_binary': 'ni',
             'type_input': 'arg',
             'verbose': False,
             'ASLR': False
-            })
-        
-        self.exploit = FormatStringExploit(self.dispatcher, verbose=False)
+            }
+        self.dispatcher = Dispatcher(self.config)
+
+        self.exploit = FormatStringExploit(self.config, self.dispatcher)
 
     def FindOffsetTest(self):
         """

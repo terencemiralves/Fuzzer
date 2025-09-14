@@ -19,13 +19,13 @@ class TestWebNoneStackAlignment(unittest.TestCase):
         This test connects to the service, sends a format string command, and checks for the expected
         """
         print("Running WorkingTest...")
-        self.dispatcher = Dispatcher({
+        self.config = {
             'mode': 'web',
             'url': 'challenge02.root-me.org',
             'port': 56003,
             'verbose': False}
-            )
-        self.exploit = FormatStringExploit(self.dispatcher, verbose=False)
+        self.dispatcher = Dispatcher(self.config)
+        self.exploit = FormatStringExploit(self.config, self.dispatcher)
         self.exploit.setup_init_instructions([
             ("recv", 4096),
             ("send", "toto"),

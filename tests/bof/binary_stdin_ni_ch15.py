@@ -15,14 +15,15 @@ expected_responses: []
 
 class TestBinaryOverflowNiStdin(unittest.TestCase):
     def setUp(self):
-        self.exploit = OverflowExploit({
+        self.config = {
             'mode': 'binary',
             'binary': 'target/bof/ch15',
             'type_binary': 'ni',
             'type_input': 'stdin',
             'verbose': False,
             'sendline': True
-            })
+            }
+        self.exploit = OverflowExploit(self.config, Dispatcher(self.config))
 
     def FindOffsetTest(self):
         """
@@ -33,7 +34,7 @@ class TestBinaryOverflowNiStdin(unittest.TestCase):
         sys.stdout = captured_output
         
         # Run the exploit to find the offset
-        offset = self.exploit.run()
+        offset = self.exploit.find_bof_offset()
 
         self.assertEqual(offset, 128, "Offset should be 128")
 

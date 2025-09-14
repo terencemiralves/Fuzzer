@@ -15,13 +15,14 @@ expected_responses: []
 
 class TestBinaryOverflowNiArg(unittest.TestCase):
     def setUp(self):
-        self.exploit = OverflowExploit({
+        self.config = {
             'mode': 'binary',
             'binary': 'target/bof/ch33',
             'type_binary': 'ni',
             'type_input': 'arg',
             'verbose': False
-            })
+        }
+        self.exploit = OverflowExploit(self.config, Dispatcher(self.config))
 
     def FindOffsetTest(self):
         """
@@ -32,7 +33,7 @@ class TestBinaryOverflowNiArg(unittest.TestCase):
         sys.stdout = captured_output
 
         # Run the exploit to find the offset
-        offset = self.exploit.run()
+        offset = self.exploit.find_bof_offset()
 
         self.assertEqual(offset, 32, "Offset should be 32")
 

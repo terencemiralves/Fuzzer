@@ -16,14 +16,15 @@ send_payload_template: "USERNAME=__PAYLOAD__"
 
 class TestBinaryOverflowNiF(unittest.TestCase):
     def setUp(self):
-        self.exploit = OverflowExploit({
+        self.config = {
             'mode': 'binary',
             'binary': 'target/bof/ch10',
             'type_binary': 'ni',
             'type_input': 'f',
             'verbose': False,
             'send_payload_template': "USERNAME=__PAYLOAD__"
-            })
+            }
+        self.exploit = OverflowExploit(self.config, Dispatcher(self.config))
 
     def FindOffsetTest(self):
         """
@@ -34,7 +35,7 @@ class TestBinaryOverflowNiF(unittest.TestCase):
         sys.stdout = captured_output
 
         # Run the exploit to find the offset
-        offset = self.exploit.run()
+        offset = self.exploit.find_bof_offset()
 
         self.assertEqual(offset, 136, "Offset should be 136")
 
