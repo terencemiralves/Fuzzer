@@ -117,8 +117,7 @@ python3 tests/testsuite.py
 
 ### TODO
 
-- [X] Remove pattern payload in string bug should be in dispatcher.
-- [X] Move init_instructions to dispatcher.
+- [X] Setup correctly the delay and remove from string bug.
 - [X] Move interactive process to dispatcher.
 - [X] Move extract_tokens and pattern notion to `dispatcher.py`.
 - [X] Make exploit modular (string bug / bof / ...).
@@ -130,8 +129,9 @@ python3 tests/testsuite.py
 - [X] Verbose mode in stringbug.
 - [X] Add ROP blind method in bof_exploit.
 - [X] Need to do a version that without any arguments just fuzz the binary with default config.
-
-### Done
-
-- [V] Parse config for `string_bug.py` or put all in `dispatcher.py` and remove parsing in `bof_exploit.py`.
-- [V] Binary parse config in binary_client_clean.py.
+- [X] Need to optimize the code.
+- [X] Need to optimize performance.
+- [X] Print string stack to find FLAG with a template like `FLAG{__EXTRACT__}`. https://github.com/majerugo/Rootme/tree/main/app_system/elf_x86_format_string_bug_basic_1 => if ASLR disabled or infinite loop with brute force.
+- [X] Env variable address and try to use it if the stack is executable. https://github.com/majerugo/Rootme/tree/main/app_system/elf_x86_format_string_bug_basic_3 => if stack is executable and (ASLR disabled or infinite loop with brute force).
+- [X] Thanks to the stack base brute force to find our payload address with -> ```payload = p32(starting_address) + b"%__offset__$s\n"``` -> `p32(starting_address) + p32(starting_address) + b'%__offset__$s'` in response https://github.com/majerugo/Rootme/tree/main/app_system/elf_x86_remote_format_string_bug => if stack is executable and (ASLR disabled or infinite loop with brute force).
+- [X] Brute force with the .text base address to find a instruction that change our EIP/RIP. https://github.com/majerugo/Rootme/tree/main/app_system/elf_x86_remote_format_string_bug => if PIE disabled or infinite loop with brute force.

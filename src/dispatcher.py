@@ -60,6 +60,46 @@ class Dispatcher:
         else:
             raise ValueError("Unsupported mode: {}".format(self.config["mode"]))
 
+    def aslr_enabled(self) -> bool:
+        """
+        Check if ASLR is enabled for the binary.
+        :return: True if ASLR is enabled, False otherwise
+        """
+        if self.client and hasattr(self.client, 'aslr_enabled'):
+            return self.client.aslr_enabled()
+        else:
+            raise ValueError("Client does not support ASLR check or is not initialized")
+
+    def pie_enabled(self) -> bool:
+        """
+        Check if PIE is enabled for the binary.
+        :return: True if PIE is enabled, False otherwise
+        """
+        if self.client and hasattr(self.client, 'pie_enabled'):
+            return self.client.pie_enabled()
+        else:
+            raise ValueError("Client does not support PIE check or is not initialized")
+
+    def get_arch(self) -> bool:
+        """
+        Get the architecture of the binary.
+        :return: architecture string (e.g. 'x86', 'x86_64', 'arm', 'aarch64')
+        """
+        if self.client and hasattr(self.client, 'get_arch'):
+            return self.client.get_arch()
+        else:
+            raise ValueError("Client does not support architecture check or is not initialized")
+        
+    def is_infinite_loop(self) -> bool:
+        """
+        Check if the process is in an infinite loop.
+        :return: True if in infinite loop, False otherwise
+        """
+        if self.client and hasattr(self.client, 'is_infinite_loop'):
+            return self.client.is_infinite_loop()
+        else:
+            raise ValueError("Client does not support infinite loop check or is not initialized")
+
 
     def is_connected(self):
         """
@@ -147,7 +187,7 @@ class Dispatcher:
         else:
             raise ValueError("Client not initialized")
         
-    def receive_response(self, arg=4096):
+    def receive_response(self, arg=4096, disable_template=False):
         """
         Receive a response from the target service.
         :param arg: Number of bytes to receive, default is 4096 or 'line' to receive until a newline or a specific string to receive until
@@ -156,10 +196,11 @@ class Dispatcher:
         """
         if self.client:
             response = self.client.receive_response(arg)
-            if self.receive_payload_template and response:
+            if self.receive_payload_template and response and not disable_template:
                 tokens = extract_tokens(self.receive_payload_template, response)
+
                 return tokens["__EXTRACT__"] if tokens and "__EXTRACT__" in tokens else None
-            return response
+            return response if response else None
         else:
             raise ValueError("Client not initialized")
         

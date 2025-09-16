@@ -70,12 +70,8 @@ def main():
 
     print(f"[+] Trying string bug format")
 
-    str_offset, str_stack_alignment = exploit.run_string_bug_exploit()
-    if str_offset == None or str_stack_alignment == None:
-        print("[-] No string bug format detected")
-    else:
-        print(f"[+] String bug format detected with offset: {str_offset} and stack alignment: {str_stack_alignment}")
-
+    string_bug = exploit.run_string_bug_exploit()
+    
     print("[+] Fuzzing completed.")
 
 if __name__ == "__main__":

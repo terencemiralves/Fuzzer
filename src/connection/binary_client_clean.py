@@ -61,6 +61,34 @@ class BinaryClient:
         if self.process_interactive not in [True, False]:
             raise ValueError("Invalid process_interactive. Must be True (interactive) or False (non-interactive).")
 
+    def aslr_enabled(self) -> bool:
+        """
+        Check if ASLR is enabled for the binary.
+        :return: True if ASLR is enabled, False otherwise
+        """
+        return self.elf.pie != 0
+
+    def pie_enabled(self) -> bool:
+        """
+        Check if PIE is enabled for the binary.
+        :return: True if PIE is enabled, False otherwise
+        """
+        return self.elf.pie != 0
+    
+    def get_arch(self) -> bool:
+        """
+        Get the architecture of the binary.
+        :return: architecture of the binary
+        """
+        return self.elf.arch
+
+    def is_infinite_loop(self) -> bool:
+        """
+        Check if the process is in an infinite loop.
+        :return: True if in infinite loop, False otherwise
+        """
+        return self.type_input == "stdin" and self.process_interactive
+
     def setup_type(self):
         """
         Setup the type of binary and input based on the binary path.
@@ -154,6 +182,9 @@ class BinaryClient:
                     print("Process is a file, sending command as argument.")
                 p = Popen([pwd + "/" + self.binary_path, TMP_EXPLOIT_FILE], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             elif self.type_input == "arg":
+                if b'\x00' in command:
+                    print("[-] Null byte detected in command, cannot write to file.")
+                    return None
                 if self.verbose:
                     print("Process is an argument, sending command as argument.")
                 p = Popen([pwd + "/" + self.binary_path, command], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
