@@ -3,7 +3,7 @@ import re
 def extract_tokens(template: bytes, actual: bytes):
     def replace(match):
         token = match.group(1)
-        if token in (b"*", b"ignore"):
+        if token in (b"*", b"__IGNORE__"):
             return b"(?:.+?)"  # non-capturing group for ignore tokens
         else:
             return b"(?P<" + token + b">.+?)"

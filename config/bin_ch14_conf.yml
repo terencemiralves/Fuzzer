@@ -1,7 +1,7 @@
 mode: 'binary'
 binary: 'target/string_bug/ch14'
-type_binary: 'ni'
+process_interactive: false
 type_input: 'arg'
 verbose: false
 ASLR: false
-receive_payload_template: "check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n"
+receive_payload_template: "check at {__IGNORE__}\nargv[1] = [{__IGNORE__}]\nfmt=[{__EXTRACT__}]\ncheck={__IGNORE__}\n"

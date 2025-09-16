@@ -18,7 +18,7 @@ class TestBinaryOverflowNiStdin(unittest.TestCase):
         self.config = {
             'mode': 'binary',
             'binary': 'target/bof/ch15',
-            'type_binary': 'ni',
+            'process_interactive': False,
             'type_input': 'stdin',
             'verbose': False,
             'sendline': True

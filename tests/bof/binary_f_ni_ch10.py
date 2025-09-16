@@ -19,7 +19,7 @@ class TestBinaryOverflowNiF(unittest.TestCase):
         self.config = {
             'mode': 'binary',
             'binary': 'target/bof/ch10',
-            'type_binary': 'ni',
+            'process_interactive': False,
             'type_input': 'f',
             'verbose': False,
             'send_payload_template': "USERNAME=__PAYLOAD__"

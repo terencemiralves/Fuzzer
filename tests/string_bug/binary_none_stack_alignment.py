@@ -11,7 +11,6 @@ from tools.pattern_tools import extract_tokens
 """
 mode: binary
 binary: target/string_bug/ch14
-type_binary: ni
 type_input: arg
 """
 
@@ -20,7 +19,7 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         self.config = {
             'mode': 'binary',
             'binary': 'target/string_bug/ch14',
-            'type_binary': 'ni',
+            'process_interactive': False,
             'type_input': 'arg',
             'verbose': False,
             'ASLR': False
@@ -41,7 +40,7 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         """
         Test to get the stack addresses.
         """
-        self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
+        self.exploit.setup_address_pattern(b"check at {__IGNORE__}\nargv[1] = [{__IGNORE__}]\nfmt=[{__EXTRACT__}]\ncheck={__IGNORE__}\n")
         stack_addresses = self.exploit.return_stack_addresses(max_length=100, delay_between_request=0, connect_and_close=False, retry_on_error=True)
         self.assertIsInstance(stack_addresses, list, "Stack addresses should be a list")
         self.assertGreater(len(stack_addresses), 1, "Number of stack addresses should be greater than 1")
@@ -50,7 +49,7 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         """
         Test to get the stack addresses.
         """
-        self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
+        self.exploit.setup_address_pattern(b"check at {__IGNORE__}\nargv[1] = [{__IGNORE__}]\nfmt=[{__EXTRACT__}]\ncheck={__IGNORE__}\n")
 
         stack_addresses = self.exploit.return_stack_addresses(
             filter_addresses=[(0xff000000, 0xffffffff)],
@@ -66,7 +65,7 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         """
         Test to get the stack addresses with a double range.
         """
-        self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
+        self.exploit.setup_address_pattern(b"check at {__IGNORE__}\nargv[1] = [{__IGNORE__}]\nfmt=[{__EXTRACT__}]\ncheck={__IGNORE__}\n")
 
         stack_addresses = self.exploit.return_stack_addresses(
             filter_addresses=
@@ -86,7 +85,7 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         """
         Test to print the stack addresses.
         """
-        self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
+        self.exploit.setup_address_pattern(b"check at {__IGNORE__}\nargv[1] = [{__IGNORE__}]\nfmt=[{__EXTRACT__}]\ncheck={__IGNORE__}\n")
 
         # Redirect stdout to capture the output
         captured_output = StringIO()
@@ -110,7 +109,7 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         """
         Test to print the stack addresses.
         """
-        self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
+        self.exploit.setup_address_pattern(b"check at {__IGNORE__}\nargv[1] = [{__IGNORE__}]\nfmt=[{__EXTRACT__}]\ncheck={__IGNORE__}\n")
 
         # Redirect stdout to capture the output
         captured_output = StringIO()
@@ -136,8 +135,8 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         """
         Test to find a string in the stack.
         """
-        self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
-        
+        self.exploit.setup_address_pattern(b"check at {__IGNORE__}\nargv[1] = [{__IGNORE__}]\nfmt=[{__EXTRACT__}]\ncheck={__IGNORE__}\n")
+
         found_addresses = self.exploit.find_string_in_stack(
             string_to_find="target/string_bug/ch14",
             max_length=100,
@@ -152,7 +151,7 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         """
         Test to find a string that is not present in the stack.
         """
-        self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
+        self.exploit.setup_address_pattern(b"check at {__IGNORE__}\nargv[1] = [{__IGNORE__}]\nfmt=[{__EXTRACT__}]\ncheck={__IGNORE__}\n")
         
         found_addresses = self.exploit.find_string_in_stack(
             string_to_find="not_present_string",
@@ -167,7 +166,7 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         """
         Test to resolve the addresses in the stack.
         """
-        self.exploit.setup_address_pattern(b"check at {ignore}\nargv[1] = [{ignore}]\nfmt=[{address}]\ncheck={ignore}\n")
+        self.exploit.setup_address_pattern(b"check at {__IGNORE__}\nargv[1] = [{__IGNORE__}]\nfmt=[{__EXTRACT__}]\ncheck={__IGNORE__}\n")
         
         self.exploit.find_offset(max_offset=100, delay_between_request=0, connect_and_close=False, retry_on_error=True)
 
@@ -177,10 +176,10 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
                                                  address_wanted=0xdeadbeef
                                                  )))
         response = self.exploit.dispatcher.receive_response()
-        check_address = extract_tokens(b"check at {address}\nargv[1] = [{ignore}]\nfmt=[{ignore}]\ncheck={ignore}\n", response)
+        check_address = extract_tokens(b"check at {__EXTRACT__}\nargv[1] = [{__IGNORE__}]\nfmt=[{__IGNORE__}]\ncheck={__IGNORE__}\n", response)
         
         response = self.exploit.classic_exploit(
-            address_overwrite=int(check_address['address'], 16),
+            address_overwrite=int(check_address['__EXTRACT__'], 16),
             address_wanted=0xdeadbeef,
             win_str="Yeah dude ! You win !\n",
             interactive=False,

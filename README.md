@@ -1,21 +1,15 @@
-# Fuzzer
-Fuzzer for find overflow / string bug / ...
+# CTF Fuzzer
+Fuzzer for find **overflow**, **format string bug** in CTF challenge. More features will be added in the future.
 
+## Requirements
+
+For binary mode, we need to set core dump and core pattern to `core` in order to detect crashes and get the EIP/RIP value.
 
 ```bash
 ulimit -c unlimited
 cat /proc/sys/kernel/core_pattern
 core
 ```
-
-## Tests
- 
-Run the tests with:
-
-```bash
-python3 tests/testsuite.py
-```
-
 
 ## How to use
 
@@ -54,12 +48,6 @@ Exploit string bug in a binary:
 python3 src/main.py --mode binary --binary ./target/string_bug/ch14 --config config/bin_ch14_conf.yml --verbose
 ```
 
-## Launch tests suite
-
-```bash
-python3 tests/testsuite.py 
-```
-
 ## Config files
 
 Config files are in the `config/` directory. You can create your own config file based on the examples provided.
@@ -77,14 +65,20 @@ For general cases, you can use the following options:
     - `ssh` : for remote execution via SSH (not implemented yet).
     - `web` : for web-based targets (not implemented yet).
     > Used in all modes for this moment.
+- `process_interactive` : boolean for type of interaction with the process. Options are:
+    - `true` : non-interactive mode, the program only ask for input once.
+    - `false` : interactive mode, the program can ask for input multiple times.
+
+- `send_payload_template` : template for sending payloads. For example:
+    - `USERNAME=__PAYLOAD__` -> will send `USERNAME=` + payload.
+
+- `receive_payload_template` : template for extracting information from received payloads. For example:
+    - `Welcome user at address __EXTRACT__` -> will extract the address from the response.
 
 ### Binary mode options
 
 - `binary` : path to the target binary.
     > Used only in binary mode for this moment.
-- `type_binary` : type of binary execution. Options are:
-    - `ni` : not interactive, will ask for input and close the program.
-    - `i` : interaction (not implemented yet), will keep the program running for multiple inputs.
     > Used only in binary mode for this moment.
 - `type_input` : type of input method. Options are:
     - `arg` : input via command line argument.
@@ -106,7 +100,7 @@ For general cases, you can use the following options:
     > Used only in string bug exploit for this moment.
 
 - `pattern_payload` : pattern to extract address for get the offset of string bug format. For example:
-    - `check at {ignore} : {address}` -> will ignore the first token and extract the second one as address.
+    - `check at {__IGNORE__} : {__EXTRACT__}` -> will ignore the first token and extract the second one as address.
     > Used only in string bug exploit for this moment.
 
 ### Options for buffer overflow exploit
@@ -115,10 +109,19 @@ For general cases, you can use the following options:
     - `USERNAME=__PAYLOAD__` -> will send `USERNAME=` + payload.
     > Used only in bof exploit for this moment.
 
+## Launch tests suite
+
+```bash
+python3 tests/testsuite.py 
+```
+
 ### TODO
 
+- [X] Remove pattern payload in string bug should be in dispatcher.
+- [X] Move init_instructions to dispatcher.
+- [X] Move interactive process to dispatcher.
 - [X] Move extract_tokens and pattern notion to `dispatcher.py`.
-- [X] Parse config for `string_bug.py` or put all in `dispatcher.py` and remove parsing in `bof_exploit.py`.
+- [X] Make exploit modular (string bug / bof / ...).
 - [X] Documentation.
 - [X] For example :
     - `python3 src/main.py --mode binary --binary ./target/bof/ch33` -> ask 2 times to setup type binary and type input.
@@ -126,3 +129,9 @@ For general cases, you can use the following options:
 - [X] Test web and ssh mode.
 - [X] Verbose mode in stringbug.
 - [X] Add ROP blind method in bof_exploit.
+- [X] Need to do a version that without any arguments just fuzz the binary with default config.
+
+### Done
+
+- [V] Parse config for `string_bug.py` or put all in `dispatcher.py` and remove parsing in `bof_exploit.py`.
+- [V] Binary parse config in binary_client_clean.py.

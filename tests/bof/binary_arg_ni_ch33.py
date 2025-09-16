@@ -18,7 +18,7 @@ class TestBinaryOverflowNiArg(unittest.TestCase):
         self.config = {
             'mode': 'binary',
             'binary': 'target/bof/ch33',
-            'type_binary': 'ni',
+            'process_interactive': False,
             'type_input': 'arg',
             'verbose': False
         }

@@ -15,84 +15,63 @@ PARSE_ERROR_FOR_FILE = [b"Usage", b"help"]
 TMP_EXPLOIT_FILE = "/tmp/exploit_file"
 
 class BinaryClient:
-    def __init__(self,
-                 binary_path: str,
-                 type_binary: str | None = None,
-                 type_input: str | None = None,
-                 aslr: bool = True,
-                 sendline: bool = False,
-                 verbose: bool = False):
+    def __init__(self, config: dict[str, str | bool | int]):
         """
         Initialize the BinaryClient with the binary path and type.
-        :param binary_path: Path to the binary file
-        :param type_binary: Type of binary:
-                    - "i" for interactive (while True loop)
-                    - "ni" for non-interactive (send a command and the process exits)
-        :param type_input: Type of input:
-                    - "i" for standard input (stdin)
-                    - "f" for file as arg (file is passed as an argument to the binary)
-                    - "arg" for argument (binary is run with exploitable arguments)
-        :param verbose: If True, enable verbose logging
+        :param config: Configuration dictionary
         """
-        # Declarations
-        self.binary_path = binary_path
-        self.verbose = verbose
-        self.aslr = aslr
-        self.sendline = sendline
-        self.elf = None
-        self.p = None
 
+        ## Process variables ##
+        self.p = None
+        self.elf = None
+
+        ## Parse config
+        self.binary_path = config.get("binary", "")
+        self.verbose = config.get("verbose", False)
+        self.aslr = config.get("ASLR", True)
+        self.sendline = config.get("sendline", False)
+        # Type of binary: True for interactive, False for non-interactive
+        self.process_interactive = config.get("process_interactive", None)
+        # Type of input: "stdin" for stdin, "f" for file as arg, "arg" for argument, "a" for automatic
+        self.type_input = config.get("type_input", None)
+
+        if self.type_input is None:
+            self.setup_type()
+    
         if self.verbose:
             context.log_level = 'debug'
         else:
             context.log_level = 'error'
         
-        # Type of binary: "i" for interactive, "ni" for non-interactive
-        self.type_binary = type_binary
-        # Type of input: "stdin" for stdin, "f" for file as arg, "arg" for argument, "a" for automatic
-        self.type_input = type_input
-
-        if self.type_binary is None or self.type_input is None:
-            self.setup_type(type_binary, type_input)
+        ## CHECKS ##
 
         # Check if the binary path is set
         if not self.binary_path:
             raise ValueError("Binary path is not set.")
+        
         # Check if the binary file exists
         if not os.path.isfile(self.binary_path):
             raise FileNotFoundError(f"Binary file not found: {self.binary_path}")
-        # Check if the type_input and type_binary are valid
+        
+        # Check if the type_input are valid
         if self.type_input not in ["stdin", "f", "arg"]:
             raise ValueError("Invalid type_input. Must be 'stdin', 'f', or 'arg'.")
-        # Check if the type_binary is valid
-        if self.type_binary not in ["i", "ni"]:
-            raise ValueError("Invalid type_binary. Must be 'i' or 'ni'.")
 
-    def setup_type(self,
-                   type_binary: str | None = None,
-                   type_input: str | None = None):
+        # Check if the process_interactive is valid
+        if self.process_interactive not in [True, False]:
+            raise ValueError("Invalid process_interactive. Must be True (interactive) or False (non-interactive).")
+
+    def setup_type(self):
         """
         Setup the type of binary and input based on the binary path.
         This method is called after the binary client is initialized.
         """
-        if type_binary:
-            self.type_binary = type_binary
+        print("There are 3 types of input for the binary: 'stdin' for standard input (stdin), 'f' for file as arg (file is passed as an argument to the binary) and 'arg' for argument (binary is run with exploitable arguments).")
+        input_str = input("Enter the type of input (stdin/f/arg): ").strip().lower()
+        if input_str in ["stdin", "f", "arg"]:
+            self.type_input = input_str
         else:
-            print("There are 2 types of binary: 'i' for interactive (while True loop) and 'ni' for non-interactive (send a command and the process exits).")
-            input_str = input("Enter the type of binary (i/ni): ").strip().lower()
-            if input_str in ["i", "ni"]:
-                self.type_binary = input_str
-            else:
-                raise ValueError("Invalid type_binary. Must be 'i' or 'ni'.")
-        if type_input:
-            self.type_input = type_input
-        else:
-            print("There are 3 types of input: 'stdin' for standard input (stdin), 'f' for file as arg (file is passed as an argument to the binary) and 'arg' for argument (binary is run with exploitable arguments).")
-            input_str = input("Enter the type of input (stdin/f/arg): ").strip().lower()
-            if input_str in ["stdin", "f", "arg"]:
-                self.type_input = input_str
-            else:
-                raise ValueError("Invalid type_input. Must be 'stdin', 'f', or 'arg'.")
+            raise ValueError("Invalid type_input. Must be 'stdin', 'f', or 'arg'.")
         
         
     ### CHECKS ###
@@ -112,14 +91,6 @@ class BinaryClient:
         :return: True if connected, False otherwise
         """
         return self.p is not None and self.p.connected()
-    
-
-    def is_interactive(self) -> bool:
-        """
-        Check if the client is interactive.
-        :return: True if interactive, False otherwise
-        """
-        return self.type_binary == "i"
     
     
     ### CONNECTIONS ###
@@ -227,27 +198,12 @@ class BinaryClient:
         # Binary with stdin input
         if self.type_input == "stdin":
             # Interactive binary
-            if self.type_binary == "i":
-                if self.verbose:
-                    print("Process is interactive, sending command as input.")
-                if self.process_alive():
-                    if self.sendline:
-                        self.p.sendline(command)
-                    else:
-                        self.p.send(command)
-                else:
-                    raise RuntimeError("Process is not alive, cannot send command.")
-            # Non-interactive binary
-            elif self.type_binary == "ni":
-                if self.verbose:
-                    print("Process is non-interactive, sending command as input.")
-                if self.process_alive():
-                    if self.sendline:
-                        self.p.sendline(command)
-                    else:
-                        self.p.send(command)
-                else:
-                    raise RuntimeError("Process is not alive, cannot send command.")
+            if self.verbose:
+                print("Process is stdin, sending command as input.")
+            if self.sendline:
+                self.p.sendline(command)
+            else:
+                self.p.send(command)
         # Binary with file as input
         elif self.type_input == "f":
             f = open(TMP_EXPLOIT_FILE, "wb")
@@ -261,7 +217,6 @@ class BinaryClient:
             if self.verbose:
                 print("Process is an argument, sending command as argument.")
             self.p = process([self.binary_path, command], aslr=self.aslr)
-
         ## RETURN CODE ##
         if get_return:
             # Check if the process is alive
@@ -276,7 +231,7 @@ class BinaryClient:
                 if self.verbose:
                     print("Process is still alive")
 
-                if self.type_binary == "ni":
+                if not self.process_interactive:
                     self.p.wait()
                     if self.type_input == "f":
                         os.remove(TMP_EXPLOIT_FILE)
@@ -286,7 +241,7 @@ class BinaryClient:
 
         
 
-    def receive_response(self, arg : int | str = 4096, close_process : bool = True) -> bytes | None:
+    def receive_response(self, arg : int | str = 4096) -> bytes | None:
         """
         Receive a response from the binary process
         :param arg: Number of bytes to receive, default is 4096 or 'line' to receive until a newline or a specific string to receive until
@@ -301,8 +256,6 @@ class BinaryClient:
             response = self.p.recvuntil(arg.encode())
         else:
             raise ValueError("Argument must be an integer or a string ('line' or any other string to recvuntil).")
-        if self.type_binary == "ni" and close_process:
-            self.p.close()
         return response
     
     def interactive(self) -> None:
