@@ -48,6 +48,10 @@ Exploit string bug in a binary:
 python3 src/main.py --mode binary --binary ./target/string_bug/ch14 --config config/bin_ch14_conf.yml --verbose
 ```
 
+## Environment variables
+
+Set `COLOR=1` in the `.env` file to enable colored terminal output. Any other value will disable colors.
+
 ## Config files
 
 Config files are in the `config/` directory. You can create your own config file based on the examples provided.
