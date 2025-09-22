@@ -43,9 +43,9 @@ else
     BOLD_GREEN=''
     BOLD_YELLOW=''
     BOLD_BLUE=''
+    # Reset color
+    NC='' # No Color
 fi
-# Reset color
-NC='\033[0m' # No Color
 echo "${CYAN}███████╗██╗   ██╗███████╗███████╗███████╗██████╗"
 echo "██╔════╝██║   ██║╚══███╔╝╚══███╔╝██╔════╝██╔══██╗"
 echo "█████╗  ██║   ██║  ███╔╝   ███╔╝ █████╗  ██████╔╝"
