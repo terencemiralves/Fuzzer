@@ -62,6 +62,19 @@ if [ "$(python3 -c 'import sys; print(sys.version_info[0])')" -ne 3 ]; then
     exit 1
 fi
 
+# Check if python3-venv is installed
+if ! dpkg -s python3-venv > /dev/null 2>&1; then
+    echo "\n${YELLOW}The python3-venv package is not installed. Installing...${NC}"
+    sudo apt-get update
+    sudo apt-get install -y python3-venv
+    if [ $? -ne 0 ]; then
+        echo "\n${BOLD_RED}Error: Failed to install python3-venv.${NC}"
+        exit 1
+    fi
+else
+    echo "\n${GREEN}The python3-venv package is already installed.${NC}"
+fi
+
 # Check if virtualenv is installed
 if ! [ -f .venv/bin/activate ]; then
     echo "\n${YELLOW}The virtual environment is not installed. Installing...${NC}"
