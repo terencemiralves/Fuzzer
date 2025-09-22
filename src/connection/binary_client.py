@@ -2,6 +2,7 @@ from glob import glob
 from multiprocessing import context, process
 from subprocess import Popen
 from tools.enable_core_dump import enable_core_dumps
+from printer import print_error, print_success
 from pwn import *
 import subprocess
 import glob
@@ -81,7 +82,7 @@ class BinaryClient:
         if self.type != "f":
             self.p = process(self.binary_path)
         if self.verbose:
-            print(f"Connected to binary: {self.binary_path}")
+            print_success(f"Connected to binary: {self.binary_path}")
 
     def get_address_segfault(self, command):
         """ Get the core file path """
@@ -89,9 +90,10 @@ class BinaryClient:
         if os.path.exists(core_pattern):
             with open(core_pattern, 'r') as f:
                 if f.read().strip() != "core":
-                    print("[!] Core pattern is not set to 'core'.")
+                    print_error("[!] Core pattern is not set to 'core'.")
                     raise RuntimeError("Core pattern is not set to 'core'.")
         else:
+            print_error("[!] Core pattern file not found.")
             raise FileNotFoundError("Core pattern file not found.")
         with enable_core_dumps("/tmp"):
             if self.type == "ni":

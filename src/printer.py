@@ -46,14 +46,14 @@ def print_warning(message):
     print_colored(message, 'yellow')
 
 def print_info(message):
-    print_colored(message, 'cyan')
+    print_colored(message, 'magenta')
 
 def print_header(message):
-    print_colored(message, 'magenta', attrs=['bold'])
+    print_colored(message, 'cyan', attrs=['bold'])
 
 # Legacy compatibility - map old bcolors to termcolor names
 class ColorMap:
-    HEADER = 'magenta'
+    HEADER = 'cyan'
     OKBLUE = 'blue'
     OKCYAN = 'cyan'
     OKGREEN = 'green'

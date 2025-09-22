@@ -4,6 +4,9 @@ from exploit.exploit import Exploit
 from printer import print_colored, print_success, print_error, print_info
 
 def load_config(path):
+    if (not path.endswith('.yml')) and (not path.endswith('.yaml')):
+        print_error("[!] Config file must be a .yml or .yaml file")
+        exit(1)
     with open(path, "r") as f:
         return yaml.safe_load(f)
 

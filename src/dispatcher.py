@@ -2,6 +2,7 @@ from connection.ssh_client import SSHClient
 from connection.web_client import WebClient
 from connection.binary_client_clean import BinaryClient
 from tools.pattern_tools import extract_tokens
+from printer import print_info
 import os
 
 class Dispatcher:
@@ -127,7 +128,7 @@ class Dispatcher:
         :param process_interactive: True if the process is interactive, False otherwise
         :return: None
         """
-        print("There are 2 types of process: 'i' for interactive (while True loop) and 'ni' for non-interactive (send a command and the process exits).")
+        print_info("There are 2 types of process: 'i' for interactive (while True loop) and 'ni' for non-interactive (send a command and the process exits).")
         input_str = input("Enter the type of process (i/ni): ").strip().lower()
         if input_str in ["i", "ni"]:
             self.process_interactive = input_str == "i"
