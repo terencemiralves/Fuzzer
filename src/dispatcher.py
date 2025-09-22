@@ -173,17 +173,17 @@ class Dispatcher:
 
             if self.process_interactive:
                 if self.verbose:
-                    print("Process is interactive")
+                    print_info("Process is interactive")
                 if not self.client.process_alive():
                     raise ValueError("Process is not alive. Cannot send command.")
             else:
                 if self.verbose:
-                    print("Process is non-interactive")
+                    print_info("Process is non-interactive")
 
 
 
             if self.client.verbose:
-                print(f"Sending command: {command}")
+                print_info(f"Sending command: {command}")
             return self.client.send_request(command, get_return=get_return)
         else:
             raise ValueError("Client not initialized")
@@ -221,18 +221,18 @@ class Dispatcher:
         if instructions and self.is_connected():
             for command, arg in instructions:
                 if self.client.verbose:
-                    print(f"Executing command: {command} with arg: {arg}")
+                    print_info(f"Executing command: {command} with arg: {arg}")
                 if command == "recv":
                     response = self.receive_response(arg)
                     if self.client.verbose:
-                        print(f"Received: {response}")
+                        print_info(f"Received: {response}")
                 elif command == "send":
                     if isinstance(arg, str):
                         arg = arg.encode()
                     elif not isinstance(arg, bytes):
                         raise ValueError("Argument must be a string or bytes")
                     if self.client.verbose:
-                        print(f"Sending: {arg}")
+                        print_info(f"Sending: {arg}")
                     self.send_command(arg)
                 else:
                     raise ValueError(f"Unknown command: {command}")
