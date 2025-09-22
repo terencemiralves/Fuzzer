@@ -135,3 +135,7 @@ python3 tests/testsuite.py
 - [X] Env variable address and try to use it if the stack is executable. https://github.com/majerugo/Rootme/tree/main/app_system/elf_x86_format_string_bug_basic_3 => if stack is executable and (ASLR disabled or infinite loop with brute force).
 - [X] Thanks to the stack base brute force to find our payload address with -> ```payload = p32(starting_address) + b"%__offset__$s\n"``` -> `p32(starting_address) + p32(starting_address) + b'%__offset__$s'` in response https://github.com/majerugo/Rootme/tree/main/app_system/elf_x86_remote_format_string_bug => if stack is executable and (ASLR disabled or infinite loop with brute force).
 - [X] Brute force with the .text base address to find a instruction that change our EIP/RIP. https://github.com/majerugo/Rootme/tree/main/app_system/elf_x86_remote_format_string_bug => if PIE disabled or infinite loop with brute force.
+
+## Sources
+
+- [PwntoolsProcess](https://docs.pwntools.com/en/stable/tubes/processes.html)
