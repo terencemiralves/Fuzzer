@@ -102,7 +102,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Make the binaries executable
-find /home/phill-lewis/tools/Fuzzer/target/ -type f -exec chmod +x {} \;
+find ./target/ -type f -exec chmod +x {} \;
 
 echo  "\n${BOLD_GREEN}Installation completed successfully!${NC}"
 echo  "\n${CYAN}To begin using the virtual environment, run ${BOLD_YELLOW}'. .venv/bin/activate'${NC}"
