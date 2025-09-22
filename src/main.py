@@ -1,6 +1,8 @@
 import argparse
 import yaml
 from exploit.exploit import Exploit
+from printer import print_colored, print_success, print_error, print_info
+
 def load_config(path):
     with open(path, "r") as f:
         return yaml.safe_load(f)
@@ -36,7 +38,7 @@ def main():
             if args.verbose:
                 print("[!] Using Binary default config")
         else:
-            print("[!] Missing arguments mode\nRetry with --mode <binary|web|ssh>")
+            print_colored("[!] Missing arguments mode\nRetry with --mode <binary|web|ssh>", 'red')
             return
     config["binary"] = args.binary or config.get("binary")
     config["url"] = args.url or config.get("url")
@@ -51,28 +53,28 @@ def main():
 
     config["verbose"] = args.verbose or config.get("verbose", False)
 
-    print(f"[+] Mode : {config['mode']}")
+    print_colored(f"[+] Mode : {config['mode']}", 'green')
     if config["mode"] == "binary":
-        print(f"  → Binary : {config['binary']}")
+        print_colored(f"  → Binary : {config['binary']}", 'cyan')
     elif config["mode"] == "web":
-        print(f"  → URL : {config['url']}:{config['port']}")
+        print_colored(f"  → URL : {config['url']}:{config['port']}", 'cyan')
     elif config["mode"] == "ssh":
-        print(f"  → SSH : {config['ssh']['user']}@{config['ssh']['host']} (password: {config['ssh']['password']})")
-    
-    print(f"[+] Trying to find buffer overflow...")
+        print_colored(f"  → SSH : {config['ssh']['user']}@{config['ssh']['host']} (password: {config['ssh']['password']})", 'cyan')
+
+    print_colored(f"[+] Trying to find buffer overflow...", 'cyan')
 
     exploit = Exploit(config)
     bof_index = exploit.run_bof_exploit()
     if bof_index == -1:
-        print("[-] No buffer overflow detected")
+        print_colored("[-] No buffer overflow detected", 'red')
     else:
-        print(f"[+] Buffer overflow detected with size: {bof_index}")
+        print_colored(f"[+] Buffer overflow detected with size: {bof_index}", 'green')
 
-    print(f"[+] Trying string bug format")
+    print_colored(f"[+] Trying string bug format", 'cyan')
 
     string_bug = exploit.run_string_bug_exploit()
-    
-    print("[+] Fuzzing completed.")
+
+    print_colored("[+] Fuzzing completed.", 'green')
 
 if __name__ == "__main__":
     main()
