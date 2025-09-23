@@ -7,6 +7,7 @@ from multiprocessing import context, process
 from subprocess import Popen
 from tools.enable_core_dump import enable_core_dumps
 from pwn import *
+from printer import print_error, print_success, print_info
 import subprocess
 import glob
 import os
@@ -94,7 +95,7 @@ class BinaryClient:
         Setup the type of binary and input based on the binary path.
         This method is called after the binary client is initialized.
         """
-        print("There are 3 types of input for the binary: 'stdin' for standard input (stdin), 'f' for file as arg (file is passed as an argument to the binary) and 'arg' for argument (binary is run with exploitable arguments).")
+        print_info("There are 3 types of input for the binary: 'stdin' for standard input (stdin), 'f' for file as arg (file is passed as an argument to the binary) and 'arg' for argument (binary is run with exploitable arguments).")
         input_str = input("Enter the type of input (stdin/f/arg): ").strip().lower()
         if input_str in ["stdin", "f", "arg"]:
             self.type_input = input_str
@@ -153,9 +154,10 @@ class BinaryClient:
         if os.path.exists(core_pattern):
             with open(core_pattern, 'r') as f:
                 if f.read().strip() != "core":
-                    print("[!] Core pattern is not set to 'core'.")
+                    print_error("[!] Core pattern is not set to 'core'.")
                     raise RuntimeError("Core pattern is not set to 'core'.")
         else:
+            print_error("[!] Core pattern file not found.")
             raise FileNotFoundError("Core pattern file not found.")
         
         pwd = os.getcwd()

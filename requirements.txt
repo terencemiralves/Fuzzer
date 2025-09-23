@@ -1,1 +1,4 @@
 pwntools>=4.14.1
+pyyaml>=6.0.2
+python-dotenv>=1.0.0
+termcolor>=2.3.0
