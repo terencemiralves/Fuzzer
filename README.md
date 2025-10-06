@@ -48,6 +48,12 @@ Exploit string bug in a binary:
 python3 src/main.py --mode binary --binary ./target/string_bug/ch14 --config config/bin_ch14_conf.yml --verbose
 ```
 
+Exploit string bug in a binary and try to find flag format:
+
+```bash
+python3 src/main.py --mode binary --binary ./target/string_bug/custom_read_stack --config config/bin_c_read_stack.yml
+```
+
 ## Environment variables
 
 Set `COLOR=1` in the `.env` file to enable colored terminal output. Any other value will disable colors.

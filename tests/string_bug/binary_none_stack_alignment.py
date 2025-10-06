@@ -132,8 +132,8 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         Test to find a string in the stack.
         """
 
-        found_addresses = self.exploit.find_string_in_stack(
-            string_to_find="target/string_bug/ch14",
+        found_addresses = self.exploit.find_pattern_in_stack(
+            pattern_to_find="target/string_bug/ch14",
             max_length=100,
             delay_between_request=0,
             connect_and_close=False,
@@ -147,8 +147,8 @@ class TestBinaryNoneStackAlignment(unittest.TestCase):
         Test to find a string that is not present in the stack.
         """
         
-        found_addresses = self.exploit.find_string_in_stack(
-            string_to_find="not_present_string",
+        found_addresses = self.exploit.find_pattern_in_stack(
+            pattern_to_find="not_present_string",
             max_length=100,
             delay_between_request=0,
             connect_and_close=False,

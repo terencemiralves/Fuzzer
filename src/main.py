@@ -79,5 +79,19 @@ def main():
 
     print_colored("[+] Fuzzing completed.", 'green')
 
+    import glob
+    import os
+    # Remove all core dumps generated during the tests
+    for core_file in glob.glob("/tmp/core*"):
+        try:
+            os.remove(core_file)
+        except OSError as e:
+            print(f"Error removing core file {core_file}: {e}")
+    for core_file in glob.glob(os.getcwd() + "/core*"):
+        try:
+            os.remove(core_file)
+        except OSError as e:
+            print(f"Error removing core file {core_file}: {e}")
+
 if __name__ == "__main__":
     main()
