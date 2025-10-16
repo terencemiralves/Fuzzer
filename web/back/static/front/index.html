@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Fuzzer UI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Inter, Arial, sans-serif; margin: 0; padding: 16px; background:#0f1720; color:#e6eef8; }
+    .card { background:#0b1220; border-radius:8px; padding:12px; box-shadow: 0 6px 18px rgba(0,0,0,0.6); }
+    #container { max-width:1100px; margin: 0 auto; }
+    #uploadPanel { margin-bottom: 12px; }
+    #layout { display:flex; gap:12px; margin-top: 12px; }
+    #left { flex: 1 1 320px; }
+    #right { flex: 1 1 600px; min-height: 420px; background: #000; border-radius:6px; padding:8px; overflow:auto; font-family: monospace; font-size:13px; color: #d6f8d6; }
+    button { background: #1f6feb; color:white; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; }
+    button:disabled { opacity:0.5; cursor: not-allowed; }
+    label { display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+    small.hint { color:#9fb0d6; }
+    .muted { color:#9fb0d6; font-size:13px; }
+    .line-out { color:#d6f8d6; white-space:pre-wrap; }
+    .line-err { color:#ffd6d6; white-space:pre-wrap; }
+    .line-sys { color:#9fb0d6; font-style:italic; white-space:pre-wrap; }
+    #terminal { height: 420px; overflow:auto; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h2>Simple Fuzzer UI</h2>
+
+    <div id="uploadPanel" class="card">
+      <form id="uploadForm">
+        <div>
+          <input id="fileInput" type="file" required />
+          <button id="uploadBtn" type="submit">Upload</button>
+        </div>
+        <div id="uploadInfo" class="muted" style="margin-top:8px"></div>
+      </form>
+    </div>
+
+    <div id="layout" style="display:none">
+      <div id="left" class="card">
+        <h3>Scan controls</h3>
+        <div style="margin-bottom:8px">
+          <button id="runBtn" disabled>Run scan</button>
+          <div style="margin-top:8px" class="muted">Click to start the selected scan</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label><input id="verbose" type="checkbox" /> Verbose</label>
+        </div>
+
+        <div style="margin-top:16px" class="muted">
+          Uploaded file: <span id="uploadedFilename"></span>
+        </div>
+      </div>
+
+      <div id="right" class="card">
+        <h3 style="margin-top:0">Terminal (read-only)</h3>
+        <div id="terminal"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px" class="muted">This UI streams stdout/stderr sent by the backend (read-only).</div>
+  </div>
+
+<script>
+(() => {
+  const uploadForm = document.getElementById('uploadForm');
+  const fileInput = document.getElementById('fileInput');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const uploadInfo = document.getElementById('uploadInfo');
+  const layout = document.getElementById('layout');
+  const uploadedFilenameSpan = document.getElementById('uploadedFilename');
+  const runBtn = document.getElementById('runBtn');
+  const verboseCheckbox = document.getElementById('verbose');
+  const terminal = document.getElementById('terminal');
+
+  let uploadedFilename = null;
+  let ws = null;
+
+  function appendLine(text, cls) {
+    const el = document.createElement('div');
+    el.className = cls || '';
+    el.textContent = text;
+    terminal.appendChild(el);
+    terminal.scrollTop = terminal.scrollHeight;
+  }
+
+  uploadForm.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const files = fileInput.files;
+    if (!files || files.length === 0) {
+      alert("Select a file to upload");
+      return;
+    }
+    uploadBtn.disabled = true;
+    uploadInfo.textContent = "Uploading...";
+    const fd = new FormData();
+    fd.append('file', files[0]);
+
+    try {
+      const res = await fetch('/upload', { method: 'POST', body: fd });
+      const j = await res.json();
+      if (!j.ok) throw new Error(JSON.stringify(j));
+      uploadedFilename = j.filename;
+      uploadInfo.textContent = "Upload OK: " + j.filename;
+      uploadedFilenameSpan.textContent = uploadedFilename;
+      // show scan UI
+      layout.style.display = 'flex';
+      runBtn.disabled = false;
+    } catch (e) {
+      uploadInfo.textContent = "Upload failed: " + e;
+    } finally {
+      uploadBtn.disabled = false;
+    }
+  });
+
+  runBtn.addEventListener('click', async () => {
+    if (!uploadedFilename) {
+      alert("No file uploaded");
+      return;
+    }
+    runBtn.disabled = true;
+    terminal.innerHTML = ''; // clear terminal
+    appendLine("SYSTEM: Starting scan...", "line-sys");
+    // start scan
+    try {
+      const payload = {
+        filename: uploadedFilename,
+        verbose: verboseCheckbox.checked
+      };
+      // we post form-encoded for simplicity
+      const params = new URLSearchParams();
+      params.append('filename', payload.filename);
+      params.append('verbose', payload.verbose ? 'true' : 'false');
+
+      const res = await fetch('/start_scan', {
+        method: 'POST',
+        body: params
+      });
+      const j = await res.json();
+      if (!j.run_id) throw new Error("No run_id returned");
+      const run_id = j.run_id;
+      appendLine(`SYSTEM: run_id = ${run_id}`, "line-sys");
+      // open websocket
+      ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/logs/${run_id}`);
+      ws.onopen = () => appendLine("SYSTEM: WebSocket open", "line-sys");
+      ws.onmessage = (ev) => {
+        // backend prefixes lines with OUT:, ERR:, SYSTEM:
+        const data = ev.data;
+        if (data.startsWith("OUT:")) {
+          appendLine(data.slice(4), "line-out");
+        } else if (data.startsWith("ERR:")) {
+          appendLine(data.slice(4), "line-err");
+        } else if (data.startsWith("SYSTEM:")) {
+          appendLine(data.slice(7), "line-sys");
+          if (data.includes("STREAM_END")) {
+            appendLine("SYSTEM: stream ended", "line-sys");
+            runBtn.disabled = false;
+            if (ws) ws.close();
+            ws = null;
+          }
+        } else {
+          appendLine(data, "line-out");
+        }
+      };
+      ws.onclose = () => {
+        appendLine("SYSTEM: WebSocket closed", "line-sys");
+        runBtn.disabled = false;
+      };
+      ws.onerror = (e) => {
+        appendLine("SYSTEM: WebSocket error", "line-sys");
+        runBtn.disabled = false;
+      };
+    } catch (e) {
+      appendLine("SYSTEM: start_scan error: " + e, "line-sys");
+      runBtn.disabled = false;
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
+
