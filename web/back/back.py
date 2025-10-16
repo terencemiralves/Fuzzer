@@ -46,7 +46,6 @@ async def upload(file: UploadFile = File(...)):
         pass
     return {"ok": True, "filename": filename, "path": path}
 
-
 @app.post("/start_scan")
 async def start_scan(filename: str, verbose: bool = False, timeout: int = 300):
     """
@@ -55,32 +54,62 @@ async def start_scan(filename: str, verbose: bool = False, timeout: int = 300):
     - verbose: whether to add verbose arg (frontend provides)
     - timeout: maximum runtime in seconds (server will kill after)
     """
+
     host_path = os.path.join(UPLOAD_DIR, filename)
     if not os.path.exists(host_path):
         raise HTTPException(status_code=404, detail="uploaded file not found")
 
-    # Build the command
-    # Replace {target} in template with quoted path
-    # Use shlex.split for proper argument splitting
+    # Create a run id early so config filename can use it
+    run_id = str(uuid.uuid4())
+
+    # --- Build a small YAML config dict (expand this as UI grows) ---
+    config_dict = {
+        "verbose": bool(verbose),
+        "mode": "binary",
+        # the fuzzer config expects a path to the binary; we give the saved server path
+        "binary": host_path,
+        # sensible defaults; you can add UI controls later to override these
+        "process_interactive": False,
+        "type_input": "stdin",
+    }
+
+    # write config file next to uploaded file, named with the run id
+    config_filename = f"run-{run_id}.yml"
+    config_path = os.path.join(UPLOAD_DIR, config_filename)
+    try:
+        with open(config_path, "w", encoding="utf-8") as cf:
+            yaml.safe_dump(config_dict, cf, default_flow_style=False, sort_keys=False)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to write config file: {e}")
+
+    # --- Build the command to run the fuzzer ---
     cmd_template = FUZZER_CMD_TEMPLATE
-    if "{target}" not in cmd_template:
-        raise HTTPException(status_code=500, detail="FUZZER_CMD_TEMPLATE must contain {target}")
+    if "{target}" not in cmd_template and "{config}" not in cmd_template:
+        # allow template without placeholders: append the target and config
+        # default behaviour: append target and --config <path> if not present
+        filled = cmd_template
+        args = shlex.split(filled)
+        # append target if it makes sense (if target not already passed in the template)
+        # We'll append the target path as last positional argument
+        args.append(host_path)
+        # Append config flag if template didn't contain {config}
+        args.extend(["--config", config_path])
+    else:
+        # If template contains placeholders, substitute accordingly
+        filled = cmd_template.replace("{target}", shlex.quote(host_path)).replace("{config}", shlex.quote(config_path))
+        args = shlex.split(filled)
 
-    filled = cmd_template.replace("{target}", shlex.quote(host_path))
-    args = shlex.split(filled)
-
-    # If user requested verbose, append a common verbose flag if needed.
-    # NOTE: change this if your fuzzer expects another flag.
-    if verbose:
+    # If user requested verbose and the template didn't already include a verbose flag,
+    # we add a common --verbose flag. You can adjust this logic to your fuzzer's CLI.
+    if verbose and not any(a in ("-v", "--verbose") for a in args):
         args.append("--verbose")
 
-    run_id = str(uuid.uuid4())
+    # Create queue + run record before launching
     q: asyncio.Queue = asyncio.Queue()
-    RUNS[run_id] = {"proc": None, "queue": q, "status": "starting", "tasks": []}
+    RUNS[run_id] = {"proc": None, "queue": q, "status": "starting", "tasks": [], "config": config_filename}
 
     async def run_and_stream():
         try:
-            # start the subprocess
             proc = await asyncio.create_subprocess_exec(
                 *args,
                 stdout=asyncio.subprocess.PIPE,
@@ -95,7 +124,6 @@ async def start_scan(filename: str, verbose: bool = False, timeout: int = 300):
                     if not line:
                         break
                     text = line.decode(errors="replace")
-                    # prefix to help frontend decide style
                     await q.put(f"{tag}:{text}")
                 return
 
@@ -103,7 +131,6 @@ async def start_scan(filename: str, verbose: bool = False, timeout: int = 300):
             t2 = asyncio.create_task(read_stream(proc.stderr, "ERR"))
             RUNS[run_id]["tasks"].extend([t1, t2])
 
-            # also schedule a timeout killer
             async def killer():
                 await asyncio.sleep(timeout)
                 if proc.returncode is None:
@@ -116,9 +143,7 @@ async def start_scan(filename: str, verbose: bool = False, timeout: int = 300):
             kt = asyncio.create_task(killer())
             RUNS[run_id]["tasks"].append(kt)
 
-            # wait for process to finish
             await proc.wait()
-            # ensure readers finish
             await t1
             await t2
 
@@ -128,13 +153,13 @@ async def start_scan(filename: str, verbose: bool = False, timeout: int = 300):
             RUNS[run_id]["status"] = "error"
             await q.put(f"SYSTEM:Runner error: {e}\n")
         finally:
-            # sentinel to indicate stream end
             await q.put(None)
 
     task = asyncio.create_task(run_and_stream())
     RUNS[run_id]["tasks"].append(task)
 
-    return {"run_id": run_id}
+    # Return run_id and generated config filename so frontend can show it
+    return {"run_id": run_id, "config": config_filename}
 
 
 @app.websocket("/ws/logs/{run_id}")

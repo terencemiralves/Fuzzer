@@ -141,7 +141,10 @@
       const j = await res.json();
       if (!j.run_id) throw new Error("No run_id returned");
       const run_id = j.run_id;
+      const cfg = j.config || "(no config)";
       appendLine(`SYSTEM: run_id = ${run_id}`, "line-sys");
+      appendLine(`SYSTEM: generated config = ${cfg}`, "line-sys");
+
       // open websocket
       ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/logs/${run_id}`);
       ws.onopen = () => appendLine("SYSTEM: WebSocket open", "line-sys");
