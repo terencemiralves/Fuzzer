@@ -1,5 +1,7 @@
 # backend/main.py
 import os
+import shutil
+import stat
 import uuid
 import shlex
 import asyncio
@@ -7,15 +9,27 @@ from typing import Dict, Any
 from fastapi import FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+import logging
+from fastapi import Form
+import yaml
+
+class QuotedStringDumper(yaml.SafeDumper):
+    def represent_str(self, data):
+        # Always use double quotes for strings
+        return self.represent_scalar('tag:yaml.org,2002:str', data, style='"')
+
+QuotedStringDumper.add_representer(str, QuotedStringDumper.represent_str)
+
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(APP_ROOT, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+
 # Template command used to run the fuzzer; must include {target}
 # Example default: run "python3 ./fuzzer.py {target}"
 # You can override with environment variable FUZZER_CMD_TEMPLATE
-FUZZER_CMD_TEMPLATE = os.environ.get("FUZZER_CMD_TEMPLATE", "python3 ../../src/main.py {target}")
+FUZZER_CMD_TEMPLATE = os.environ.get("FUZZER_CMD_TEMPLATE", "python3 ../../src/main.py --mode binary --binary {target} --config {config}")
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=os.path.join(APP_ROOT, "static")), name="static")
@@ -29,31 +43,44 @@ app.mount("/static", StaticFiles(directory=os.path.join(APP_ROOT, "static")), na
 # }
 RUNS: Dict[str, Dict[str, Any]] = {}
 
-
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
-    # Save uploaded file into UPLOAD_DIR with safe filename
-    unique = str(uuid.uuid4())
-    filename = f"{unique}-{file.filename}"
-    path = os.path.join(UPLOAD_DIR, filename)
-    with open(path, "wb") as f:
-        data = await file.read()
-        f.write(data)
-    # make non-executable by default; user can choose to upload executable with its mode
+    logger = logging.getLogger("uvicorn")
+
+    # Generate unique filename to avoid conflicts
+    unique_name = f"{uuid.uuid4()}-{file.filename}"
+    dest_path = os.path.join(UPLOAD_DIR, unique_name)
+
+    # Save the uploaded file
     try:
-        os.chmod(path, 0o644)
-    except Exception:
-        pass
-    return {"ok": True, "filename": filename, "path": path}
+        with open(dest_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+
+        # ✅ Make the file executable for user/group/others
+        os.chmod(dest_path, os.stat(dest_path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+        logger.info("Uploaded file saved and made executable: %s", dest_path)
+        return {"ok": True, "filename": unique_name, "path": dest_path}
+
+    except Exception as e:
+        logger.error("Failed to upload file: %s", e)
+        return {"ok": False, "error": str(e)}
+
 
 @app.post("/start_scan")
-async def start_scan(filename: str, verbose: bool = False, timeout: int = 300):
+async def start_scan(
+    filename: str = Form(...),
+    verbose: bool = Form(False),
+    timeout: int = Form(300),
+):
     """
     Start a scan run.
     - filename: name returned from /upload (not full path)
     - verbose: whether to add verbose arg (frontend provides)
     - timeout: maximum runtime in seconds (server will kill after)
     """
+    logger = logging.getLogger("uvicorn")
+    logger.info("start_scan called with filename=%s verbose=%s timeout=%s", filename, verbose, timeout)
 
     host_path = os.path.join(UPLOAD_DIR, filename)
     if not os.path.exists(host_path):
@@ -71,20 +98,32 @@ async def start_scan(filename: str, verbose: bool = False, timeout: int = 300):
         # sensible defaults; you can add UI controls later to override these
         "process_interactive": False,
         "type_input": "stdin",
+        "sendline": True
     }
 
     # write config file next to uploaded file, named with the run id
     config_filename = f"run-{run_id}.yml"
+    logger.info("Opening file %s", config_filename)
     config_path = os.path.join(UPLOAD_DIR, config_filename)
     try:
         with open(config_path, "w", encoding="utf-8") as cf:
-            yaml.safe_dump(config_dict, cf, default_flow_style=False, sort_keys=False)
+            yaml.dump(
+                config_dict,
+                cf,
+                default_flow_style=False,
+                sort_keys=False,
+                Dumper=QuotedStringDumper
+            )
     except Exception as e:
+        logger.info("Opening file %s FAILED", config_filename)
+        logger.info(e)
         raise HTTPException(status_code=500, detail=f"Failed to write config file: {e}")
 
     # --- Build the command to run the fuzzer ---
     cmd_template = FUZZER_CMD_TEMPLATE
+    print("Parsing CMD")
     if "{target}" not in cmd_template and "{config}" not in cmd_template:
+        print("Didn't find {target} or {config} in the template")
         # allow template without placeholders: append the target and config
         # default behaviour: append target and --config <path> if not present
         filled = cmd_template
@@ -95,9 +134,13 @@ async def start_scan(filename: str, verbose: bool = False, timeout: int = 300):
         # Append config flag if template didn't contain {config}
         args.extend(["--config", config_path])
     else:
+        print("Found target, building cmd")
         # If template contains placeholders, substitute accordingly
         filled = cmd_template.replace("{target}", shlex.quote(host_path)).replace("{config}", shlex.quote(config_path))
+        print("CMP= " + filled)
+        print(cmd_template)
         args = shlex.split(filled)
+        print(args)
 
     # If user requested verbose and the template didn't already include a verbose flag,
     # we add a common --verbose flag. You can adjust this logic to your fuzzer's CLI.

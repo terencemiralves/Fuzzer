@@ -5,3 +5,4 @@ termcolor>=2.3.0
 uvicorn
 fastapi
 python-multipart
+uvicorn[standard]
