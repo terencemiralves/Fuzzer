@@ -29,7 +29,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # Template command used to run the fuzzer; must include {target}
 # Example default: run "python3 ./fuzzer.py {target}"
 # You can override with environment variable FUZZER_CMD_TEMPLATE
-FUZZER_CMD_TEMPLATE = os.environ.get("FUZZER_CMD_TEMPLATE", "python3 ../../src/main.py --mode binary --binary {target} --config {config}")
+FUZZER_CMD_TEMPLATE = os.environ.get("FUZZER_CMD_TEMPLATE", "python3 /app/src/main.py --mode binary --binary {target} --config {config}")
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=os.path.join(APP_ROOT, "static")), name="static")
