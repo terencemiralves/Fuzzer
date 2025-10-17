@@ -122,8 +122,30 @@ For general cases, you can use the following options:
 ## Launch tests suite
 
 ```bash
-python3 tests/testsuite.py 
+python3 tests/testsuite.py
 ```
+
+## Docker
+
+To run the docker it is recommended to look at the libs necessairy to run the executable and if it is not present, add it to the `EXTRA_LIBS` in the .env
+In order to build the docker:
+```bash
+# from project root (where .env sits)
+export $(grep -v '^#' .env | xargs)     # loads EXTRA_LIBS into env
+docker build --build-arg EXTRA_LIBS="$EXTRA_LIBS" -t fuzzer-web:latest .
+```
+
+Then to run the built Docker:
+
+```bash
+sudo docker run -p 8000:8000 fuzzer-web:latest
+```
+
+Once this is done you should have access to the web interface of the Fuzzer in `http://localhost:8000`, there you have access to a limited fuzzer where you can upload an executable, and run a basic scan (with or without the verbose option). In the near future it will be possible to run an executable with a special config file (in order to get as close as possible from the terminal version of the app).
+![upload](support/Upload.png)
+![uploaded](support/Uploaded.png)
+![scan](./support/Scan.png)
+
 
 ### TODO
 
